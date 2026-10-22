@@ -70,7 +70,7 @@ flowchart LR
 
 <p align="center">
   <img src="docs/live/1_docker.png" width="32%" alt="TideCloak running in Docker">
-  <img src="docs/live/2_realm.png" width="32%" alt="Tide realm with Quorum Enforced Authorization">
+  <img src="docs/live/2_realmm.png" width="32%" alt="Tide realm with Quorum Enforced Authorization">
   <img src="docs/live/3_tide_account.png" width="32%" alt="Tide account, secured by Tide">
 </p>
 <p align="center"><sub>TideCloak (<code>tideorg/tidecloak-dev</code>) running in Docker on GitHub Codespaces · a Tide realm provisioned with Quorum Enforced Authorization (QEA) · a Tide account created in the Tide enclave</sub></p>

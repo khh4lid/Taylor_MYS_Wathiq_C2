@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#58CC02">
+<title>KopiKita · AI supply desk for cafés</title>
+<meta name="description" content="KopiKita: one place for every café supply in Malaysia. Biji (AI) forecasts and drafts orders; humans approve; TideCloak enforces 2-of-3 approval for spending and bank changes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="icon" href="img/logo_icon.png"><link rel="apple-touch-icon" href="img/logo_icon.png">
+<style>
+:root{
+  --bg:#F7F7F7; --green:#58CC02; --green-h:#4BB200; --green-s:#58A700; --navy:#100F3E; --blue:#1CB0F6; --blue-s:#1899D6;
+  --orange:#FF9600; --orange-h:#E68600; --orange-s:#D67E00; --ink:#4B4B4B; --text:#4B4B4B; --muted:#777777; --line:#E5E5E5; --navtext:#AFAFAF;
+  --card:#fff; --cream:#FFF5E0; --brown:#7B4A2D; --red:#FF4B4B; --red-s:#CC3C3C; --gold:#FFC800; --mint2:#D7FFB8; --purple:#CE82FF;
+  --serif:'Nunito','DIN Round Pro',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; --sans:'Nunito','DIN Round Pro',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#F7F7F7;font-family:var(--sans);color:var(--text)}
+body{display:flex;justify-content:center}
+.app{position:relative;width:100%;max-width:430px;height:100dvh;background:var(--bg);overflow:hidden;overflow:clip}
+@media (min-width:520px) and (max-width:899px){.app{max-width:560px}}
+button{font-family:var(--sans);cursor:pointer;color:inherit}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;overflow:clip}
+.screen.active{display:flex}
+.scroll{flex:1;overflow-y:auto;padding:0 18px 112px;scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+.serif{font-family:var(--serif);font-weight:400;letter-spacing:-.3px}
+/* animations (CozyPaws style) */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes wordPop{0%{opacity:0;transform:translateY(50px) scale(.7) rotate(-4deg);filter:blur(8px)}60%{opacity:1;transform:translateY(-6px) scale(1.04) rotate(1deg);filter:blur(0)}100%{opacity:1;transform:none}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+@keyframes float{50%{transform:translateY(-8px)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(232,106,16,.45)}70%{box-shadow:0 0 0 12px rgba(232,106,16,0)}100%{box-shadow:0 0 0 0 rgba(232,106,16,0)}}
+.screen.active .fu{animation:fadeUp .7s cubic-bezier(.16,1,.3,1) both}
+.screen.active .fu:nth-child(2){animation-delay:.06s}.screen.active .fu:nth-child(3){animation-delay:.12s}.screen.active .fu:nth-child(4){animation-delay:.18s}
+.screen.active .fu:nth-child(5){animation-delay:.24s}.screen.active .fu:nth-child(6){animation-delay:.3s}.screen.active .fu:nth-child(7){animation-delay:.36s}
+.word{display:inline-block;opacity:0}.screen.active .word{animation:wordPop .9s cubic-bezier(.34,1.56,.64,1) both}
+.float{animation:float 3.2s ease-in-out infinite}
+/* top bar */
+.topbar{height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0}
+.topbar h1{font-family:var(--serif);font-weight:400;font-size:24px;margin:0;color:var(--ink)}
+.cbtn{position:relative;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--line);background:#fff;display:grid;place-items:center;font-size:17px}
+.cbtn:active{transform:scale(.94)}
+.cbtn .dot{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;border-radius:10px;background:var(--orange);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid var(--bg);padding:0 4px}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 22px;border-radius:999px;font-size:15px;font-weight:700;border:none;transition:background .15s,transform .08s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:var(--green-h)}
+.btn-orange{background:var(--orange);color:#fff}.btn-orange:hover{background:var(--orange-h)}
+.btn-line{background:#fff;color:var(--green);border:1.5px solid var(--green)}
+.btn-ghost{background:transparent;color:var(--green)}
+.btn-red{background:var(--red);color:#fff}
+.btn-sm{height:36px;font-size:13px;padding:0 15px}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.arrow{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.22);display:grid;place-items:center;font-size:13px}
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:16px;margin-bottom:14px;box-shadow:0 1px 0 rgba(26,61,26,.03)}
+.card.dark{background:var(--green);border-color:var(--green);color:#fff}
+.card.cream{background:var(--cream);border-color:#f3dfc5}
+.card.alert{background:#FFF1F0;border-color:#F5C4C0}
+.sec{display:flex;align-items:baseline;justify-content:space-between;margin:20px 2px 10px}
+.sec h3{font-family:var(--serif);font-weight:400;font-size:21px;margin:0;color:var(--ink)}
+.sec a{font-size:13px;font-weight:700;color:var(--orange);text-decoration:none;cursor:pointer}
+.muted{color:var(--muted);font-size:13px;line-height:1.5}
+.row{display:flex;align-items:center;gap:10px}.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.p-green{background:#dff5e0;color:var(--green)}.p-orange{background:#fde7d6;color:#b44f08}.p-red{background:#fde0de;color:#b02a2a}
+.p-gray{background:#eef2ee;color:#5d6b5d}.p-gold{background:#fff1c2;color:#8a6500}.p-white{background:rgba(255,255,255,.16);color:#fff}
+.sim{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.7px;color:#b44f08;background:#fde7d6;border-radius:6px;padding:2px 6px;text-transform:uppercase;vertical-align:middle}
+.big{font-family:var(--serif);font-size:40px;line-height:1;color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.kpi{background:rgba(255,255,255,.1);border-radius:14px;padding:9px 10px}
+.kpi b{display:block;font-size:16px;font-weight:800}.kpi span{font-size:10.5px;opacity:.75;font-weight:600}
+.bar{height:8px;border-radius:5px;background:#e6efe6;overflow:hidden}.bar i{display:block;height:100%;border-radius:5px;transition:width .6s}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px 4px 10px;text-align:center}
+.tile:active{transform:scale(.96)}.tile .e{font-size:24px}.tile div{font-size:11.5px;font-weight:700;color:var(--ink);margin-top:3px}
+.item{display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:18px;margin-bottom:10px}
+.item .ico{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex-shrink:0;background:var(--mint2);font-size:20px}
+.item .t{font-size:14px;font-weight:700;color:var(--ink)}.item .d{font-size:12px;color:var(--muted)}
+.item .meta{flex:1;min-width:0}.item .meta .t,.item .meta .d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mode{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:6px 10px;border-radius:999px}
+.mode-demo{background:#fde7d6;color:#b44f08}.mode-live{background:#dff5e0;color:var(--green)}
+/* nav */
+.nav{position:absolute;left:0;right:0;bottom:0;height:82px;background:#fff;border-top:1px solid var(--line);border-radius:22px 22px 0 0;display:none;align-items:center;justify-content:space-around;padding:0 4px env(safe-area-inset-bottom);z-index:20}
+.nav.show{display:flex}
+.nav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:#97a597;width:64px;padding:6px 0}
+.nav button .ic{font-size:21px;filter:grayscale(1);opacity:.55}
+.nav button.active{color:var(--green)}.nav button.active .ic{filter:none;opacity:1}
+.nav .biji{width:66px;height:66px;border-radius:50%;background:var(--green);margin-top:-34px;display:grid;place-items:center;border:5px solid var(--bg);box-shadow:0 6px 18px rgba(26,61,26,.3);padding:0}
+.nav .biji.active{background:var(--orange)}
+.nav .badge{position:absolute;margin:-2px 0 0 22px;min-width:17px;height:17px;border-radius:9px;background:var(--orange);color:#fff;font-size:9.5px;font-weight:800;display:grid;place-items:center;padding:0 4px}
+/* onboarding hero */
+#onboard{background:radial-gradient(120% 70% at 50% 0%,#fff 0%,var(--bg) 60%)}
+.hero{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 22px 0;overflow:hidden}
+.hero h2{font-family:var(--serif);font-weight:400;color:var(--ink);font-size:44px;line-height:.98;margin:10px 0 0;letter-spacing:-.6px}
+.hero h2 .o{color:var(--orange)}
+.hero p{color:var(--muted);font-size:15px;line-height:1.5;margin:14px 0 0;max-width:330px}
+.hero-cards{display:flex;gap:10px;margin-top:18px;width:100%}
+.hc{flex:1;background:#fff;border:1px solid var(--line);border-radius:18px;padding:10px 8px;text-align:left}
+.hc b{display:block;font-family:var(--serif);font-weight:400;font-size:22px;color:var(--ink)}.hc span{font-size:11px;color:var(--muted);font-weight:600;line-height:1.3;display:block}
+.onboard-actions{padding:14px 22px 26px;display:flex;flex-direction:column;gap:10px}
+/* shop */
+.search{display:flex;align-items:center;gap:10px;height:48px;border-radius:999px;background:#fff;border:1px solid var(--line);padding:0 16px;color:var(--muted);font-size:14px}
+.search input{border:none;outline:none;flex:1;font:inherit;color:var(--text);background:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--text)}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.prod{background:#fff;border:1px solid var(--line);border-radius:20px;padding:10px;position:relative}
+.prod .art{aspect-ratio:1/1;border-radius:14px;background:var(--cream);display:grid;place-items:center;margin-bottom:8px;position:relative}
+.prod .n{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.25;min-height:34px}
+.prod .s{font-size:11px;color:var(--muted);margin-top:2px}
+.prod .p{font-weight:800;color:var(--green);font-size:15px;margin-top:6px}
+.prod .add{position:absolute;right:10px;bottom:10px;width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;border:none;font-size:20px;line-height:1;display:grid;place-items:center}
+.prod .add.in{background:var(--orange)}
+.prod .tag{position:absolute;left:8px;top:8px;font-size:10px;font-weight:800;background:#fff;color:var(--green);border-radius:999px;padding:3px 8px}
+.cartbar{position:absolute;left:14px;right:14px;bottom:94px;z-index:15;background:var(--green);color:#fff;border-radius:999px;padding:8px 8px 8px 18px;display:none;align-items:center;gap:10px;box-shadow:0 10px 24px rgba(26,61,26,.35)}
+.cartbar.show{display:flex;animation:scaleIn .35s cubic-bezier(.16,1,.3,1)}
+/* chat */
+.chat{flex:1;overflow-y:auto;padding:6px 14px 10px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none}
+.msg{max-width:86%;padding:11px 14px;border-radius:20px;font-size:14px;line-height:1.45;word-wrap:break-word}
+.msg.me{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:6px}
+.msg.bot{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:6px}
+.botrow{display:flex;gap:8px;align-items:flex-end;align-self:flex-start;max-width:94%}
+.botrow .msg{max-width:100%}
+.tcard{background:var(--cream);border:1px solid #f0dcc0;border-radius:16px;padding:10px 12px;margin-top:8px;font-size:13px}
+.tcard table{width:100%;border-collapse:collapse;font-size:12.5px}.tcard td{padding:4px 0;border-bottom:1px dashed #ecd7b9}.tcard td:last-child{text-align:right;font-weight:700;white-space:nowrap;padding-left:8px}
+.deny{background:#FFF1F0;border:1px solid #F5C4C0;border-radius:16px;padding:10px 12px;margin-top:8px;font-size:13px}
+.suggest{display:flex;gap:8px;overflow-x:auto;padding:6px 14px;scrollbar-width:none;flex-shrink:0}.suggest::-webkit-scrollbar{display:none}
+.suggest button{flex-shrink:0;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:600}
+.composer{display:flex;gap:8px;padding:8px 14px 96px;flex-shrink:0}
+.input{flex:1;height:48px;padding:0 18px;border:1px solid var(--line);border-radius:999px;font:500 15px var(--sans);color:var(--text);background:#fff;outline:none}
+.input:focus{border-color:var(--green)}
+textarea.input{display:block;width:100%;height:84px;border-radius:18px;padding:12px 14px;resize:none;line-height:1.45}
+.typing{display:inline-flex;gap:4px}.typing i{width:7px;height:7px;border-radius:50%;background:#a7b5a7;animation:blink 1s infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:.25}}
+/* suppliers + map */
+.map{position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--line);background:#E7F5E8}
+.wa{display:flex;gap:10px;padding:12px;border:1px solid var(--line);border-radius:18px;background:#fff;margin-bottom:10px}
+.wa.flag{border-color:#F5C4C0;background:#FFF6F5}
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0}
+/* approvals */
+.req{border-radius:22px;padding:16px;margin-bottom:14px;background:var(--green);color:#fff}
+.req.risk{background:#3a1414}
+.admin{display:flex;align-items:center;gap:10px;padding:10px;border-radius:16px;background:rgba(255,255,255,.08);margin-top:8px}
+.admin .n{font-weight:700;font-size:14px}.admin .r{font-size:11px;opacity:.6}
+.req .bar{background:rgba(255,255,255,.15)}
+.role{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-weight:600;font-size:12.5px;margin:0 6px 8px 0;background:#fff}
+.role.has{border-color:#b9e2bb;background:#effaf0;color:var(--green)}.role.no{color:#97a597}
+/* table */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}.tbl th{text-align:left;font-size:11px;color:var(--muted);font-weight:700;padding:6px 0;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 0;border-bottom:1px solid #edf5ed;vertical-align:middle}.tbl td.r,.tbl th.r{text-align:right;padding-left:10px;white-space:nowrap}
+/* vault */
+.cipher{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--muted);word-break:break-all;background:#f3f7f3;border-radius:10px;padding:8px;margin-top:8px;max-height:54px;overflow:hidden}
+.plain{font-size:13.5px;font-weight:600;margin-top:8px;padding:10px;border-radius:12px;background:#effaf0;border:1px solid #b9e2bb;color:var(--green)}
+/* sheet, toast, confetti */
+.sheet-bg{position:absolute;inset:0;background:rgba(26,61,26,.45);z-index:40;display:none}.sheet-bg.open{display:block}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:88%;background:#fff;border-radius:26px 26px 0 0;z-index:41;padding:10px 18px 28px;transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);overflow-y:auto}
+.sheet.open{transform:none}.grabber{width:44px;height:5px;border-radius:3px;background:var(--line);margin:4px auto 12px}
+.toast{position:absolute;left:50%;top:auto;bottom:100px;transform:translate(-50%,180%);background:var(--green);color:#fff;font-weight:600;font-size:13px;padding:10px 16px;border-radius:14px;z-index:60;transition:transform .3s;max-width:88%;text-align:center;box-shadow:0 8px 20px rgba(26,61,26,.3)}
+.toast.show{transform:translate(-50%,0)}.toast{opacity:0;transition:transform .3s,opacity .3s}.toast.show{opacity:1}
+.confetti{position:absolute;inset:0;pointer-events:none;z-index:55;overflow:hidden}
+.confetti i{position:absolute;width:8px;height:12px;border-radius:2px;top:-20px;animation:drop 1.5s ease-in forwards}
+@keyframes drop{to{transform:translateY(920px) rotate(560deg);opacity:.2}}
+.toggle{position:relative;width:48px;height:28px;border-radius:14px;background:#cfe0cf;flex-shrink:0;transition:.2s;cursor:pointer}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15);transition:.2s}
+.toggle.on{background:var(--green)}.toggle.on::after{transform:translateX(20px)}
+.pulse{animation:pulse 1.8s infinite}
+.seg{display:flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{flex:1;border:none;background:none;border-radius:999px;padding:7px 0;font-size:12.5px;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--green);color:#fff}
+
+/* v2: carousels, KPI cards, charts, map, WhatsApp */
+.hscroll{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px;padding:2px 18px 12px;scrollbar-width:none}.hscroll::-webkit-scrollbar{display:none}
+.hscroll>*{scroll-snap-align:start;flex:0 0 auto}
+.kcard{width:196px;height:138px;border-radius:24px;background:#fff;border:1px solid var(--line);padding:14px 16px;display:flex;flex-direction:column;justify-content:space-between}
+.kcard.dark{background:var(--green);border-color:var(--green);color:#fff}
+.kcard .kl{font-size:12px;font-weight:700;opacity:.7}.kcard .kv{font-size:30px;line-height:1}
+.ins{width:236px;border-radius:24px;padding:14px;background:#fff;border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.ins .ic{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:22px}
+.ins .t{font-weight:800;color:var(--ink);font-size:15px;line-height:1.2}.ins .d{font-size:12.5px;color:var(--muted)}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .6s cubic-bezier(.16,1,.3,1),transform .6s cubic-bezier(.16,1,.3,1)}.reveal.in{opacity:1;transform:none}
+.tip{position:absolute;pointer-events:none;background:var(--green);color:#fff;font-size:12px;font-weight:700;padding:5px 9px;border-radius:10px;transform:translate(-50%,-120%);opacity:0;transition:opacity .15s;white-space:nowrap}
+.legend{display:flex;align-items:center;gap:8px;font-size:12.5px;margin:5px 0}.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}.legend b{margin-left:auto}
+.rmap{position:relative;height:310px;border-radius:22px;overflow:hidden;border:1px solid var(--line);touch-action:none;cursor:grab;background:#cfd8cf}
+.rmap-in{position:absolute;left:0;top:0;width:1270px;height:979px;transform-origin:0 0}
+.rmap-in img.base{position:absolute;left:0;top:0;width:1270px;height:979px;user-select:none;-webkit-user-drag:none}
+.pin{position:absolute;transform:translate(-50%,-100%) scale(var(--k,1));transform-origin:50% 100%;display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.pin .lab{background:#fff;color:var(--green);font-weight:800;font-size:12px;padding:5px 10px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.25);white-space:nowrap}
+.pin .dotc{width:34px;height:34px;border-radius:50%;background:var(--orange);border:3px solid #fff;display:grid;place-items:center;font-size:16px;margin-top:4px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.van{position:absolute;left:0;top:0;offset-rotate:0deg;animation:drive linear infinite}
+.van .vb{transform:translate(-50%,-50%) scale(var(--k,1));display:flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:4px 10px 4px 4px;box-shadow:0 4px 14px rgba(0,0,0,.3);font-size:11.5px;font-weight:800;color:var(--green);white-space:nowrap}
+.van .vb span{width:26px;height:26px;border-radius:50%;background:var(--green);display:grid;place-items:center;font-size:14px}
+@keyframes drive{from{offset-distance:0%}to{offset-distance:100%}}
+.zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}.zoom button{width:36px;height:36px;border-radius:12px;border:none;background:#fff;font-size:20px;font-weight:700;color:var(--green);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.attr{position:absolute;left:8px;bottom:8px;font-size:9.5px;color:#fff;background:rgba(0,0,0,.45);padding:3px 7px;border-radius:8px}
+.eta{width:200px;border-radius:20px;background:#fff;border:1px solid var(--line);padding:12px;display:flex;gap:10px;align-items:center}
+.btn-wa{background:#25D366;color:#fff}.btn-wa:hover{background:#1ebe5a}
+.wa-panel{border-radius:22px;overflow:hidden;border:1px solid var(--line);background:#ECE5DD}
+.wa-head{background:#075E54;color:#fff;display:flex;align-items:center;gap:10px;padding:12px 14px;font-weight:700;font-size:14px}
+.wb{max-width:86%;margin:10px 12px;background:#fff;border-radius:14px;border-top-left-radius:4px;padding:9px 12px;font-size:13.5px;line-height:1.4;box-shadow:0 1px 1px rgba(0,0,0,.1)}
+.wb .who{font-size:12px;font-weight:800;margin-bottom:2px}.wb .meta{font-size:10.5px;color:#7b8a7b;text-align:right;margin-top:3px}
+.wb.flag{background:#FFF1F0;border:2px solid #E8A09A}
+.wb.out{margin-left:auto;background:#DCF8C6;border-top-left-radius:14px;border-top-right-radius:4px}
+.prod .art img{width:100%;height:100%;object-fit:cover;border-radius:14px}
+
+/* v3 */
+.toast{pointer-events:none}
+.logo{display:inline-flex;align-items:center;gap:8px;font-family:var(--serif);font-size:24px;color:var(--ink)}
+.logo .k{color:var(--orange)}
+.obs{flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.obs::-webkit-scrollbar{display:none}
+.ob{flex:0 0 100%;scroll-snap-align:center;padding:14px 18px 0;display:flex}
+.obc{flex:1;border-radius:32px;background:var(--green);color:#fff;padding:26px 22px 0;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.obc.light{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.obc h2{font-family:var(--serif);font-weight:400;font-size:40px;line-height:1;margin:0;letter-spacing:-.5px}
+.obc h2 .o{color:var(--orange)}
+.obc .ph{margin:18px auto 0;width:208px;flex:1;min-height:0;border-radius:30px 30px 0 0;border:7px solid #142614;border-bottom:none;overflow:hidden;background:#FFFFFF;box-shadow:0 20px 40px rgba(0,0,0,.35)}
+.obc .ph img{width:100%;display:block}
+.obdots{display:flex;gap:6px;justify-content:center;margin:12px 0 2px}.obdots i{width:8px;height:8px;border-radius:4px;background:#cfe0cf;transition:.25s}.obdots i.on{width:22px;background:var(--orange)}
+.brc{width:208px;border-radius:22px;background:#fff;border:1px solid var(--line);padding:14px}
+.brc .n{font-weight:800;color:var(--ink);font-size:15px}.brc .v{font-family:var(--serif);font-size:26px;color:var(--ink);margin-top:4px}
+.qty{display:inline-flex;align-items:center;gap:8px}.qty button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:#fff;font-weight:800;color:var(--green)}
+.supl{display:flex;flex-direction:column;align-items:center;gap:6px;width:74px}.supl .m{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px;box-shadow:0 6px 14px rgba(0,0,0,.12)}
+.supl span{font-size:10.5px;font-weight:700;color:var(--ink);text-align:center;line-height:1.2}
+
+/* v4: typography + soft charts */
+html,body{-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}
+.serif,.topbar h1,.sec h3,.hero h2,.obc h2,.logo,.big,.kcard .kv,.brc .v{font-family:var(--serif)!important;font-weight:650!important;letter-spacing:-.035em!important}
+.topbar h1{font-size:22px}.sec h3{font-size:19px}.obc h2{font-size:36px;line-height:1.02}
+.kcard .kv{font-size:28px}.kcard.dark .kv{color:#fff}
+.delta{font-size:12px;font-weight:700;color:#58A700}.kcard.dark .delta{color:#A5ED6E}
+.card{box-shadow:0 10px 26px rgba(44,35,29,.06),0 1px 3px rgba(44,35,29,.04);border-color:#e6f1e6}
+.panelw{border-radius:18px;background:radial-gradient(circle at 50% 80%,rgba(255,225,207,.35),transparent 50%),linear-gradient(180deg,#fff,#fffaf6)}
+.chip-v{fill:#FF9600}
+
+/* ===== v5 design system ===== */
+html,body{background:var(--bg);font-family:var(--sans);color:var(--ink)}
+.app{background:var(--bg)}
+.serif,.topbar h1,.sec h3,.hero h2,.obc h2,.logo,.big,.kcard .kv,.brc .v{font-family:var(--serif)!important;font-weight:900!important;letter-spacing:-.01em!important}
+.logo .k,.nav-logo .k{color:var(--green)}
+.topbar{height:68px}.topbar h1{font-size:24px;color:var(--ink)}
+.sec h3{font-size:20px;color:var(--ink)}.sec a{color:var(--blue);font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:.5px}
+.muted{color:var(--muted)}
+.card,.item,.prod,.kcard,.ins,.brc,.eta,.wa,.hc{border:2px solid var(--line)!important;box-shadow:none!important;border-radius:18px}
+.card.dark,.kcard.dark{background:var(--navy)!important;border-color:var(--navy)!important;color:#fff}
+.card.cream{background:#FFF8E6;border-color:#FFE3A3!important}.card.alert{background:#FFF1F1;border-color:#FFC1C1!important}
+.panelw{background:linear-gradient(180deg,#fff,#F6FFEE)!important}
+.btn{border-radius:14px;text-transform:uppercase;letter-spacing:.5px;font-weight:800;height:50px}
+.btn:active{transform:translateY(4px)!important;box-shadow:none!important}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 4px 0 var(--green-s)}.btn-green:hover{background:var(--green-h)}
+.btn-orange{background:var(--orange);color:#fff;box-shadow:0 4px 0 var(--orange-s)}.btn-orange:hover{background:var(--orange-h)}
+.btn-line{background:#fff;color:var(--blue);border:2px solid var(--line);box-shadow:0 4px 0 var(--line)}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 4px 0 var(--red-s)}
+.btn-wa{background:#25D366;color:#fff;box-shadow:0 4px 0 #1DA851}
+.btn-sm{height:38px;font-size:12.5px;border-radius:12px}
+.arrow{background:rgba(255,255,255,.25)}
+.pill{font-weight:800;text-transform:uppercase;letter-spacing:.3px;font-size:10.5px;padding:4px 10px}
+.p-green{background:#E9FCD8;color:#46A302}.p-orange{background:#FFF2DF;color:#E07A00}.p-red{background:#FFE8E8;color:#E53E3E}
+.p-gray{background:#F0F0F0;color:#777}.p-gold{background:#FFF6CC;color:#B8920F}.p-white{background:rgba(255,255,255,.16);color:#fff}
+.sim{background:#FFF2DF;color:#E07A00;border-radius:8px}
+.mode-demo{background:#FFF2DF;color:#E07A00}.mode-live{background:#E9FCD8;color:#46A302}
+.cbtn{border:2px solid var(--line);box-shadow:0 3px 0 var(--line)}.cbtn:active{transform:translateY(3px);box-shadow:none}
+.cbtn .dot{background:var(--red)}
+.input,.search,textarea.input{border:2px solid var(--line)!important;border-radius:14px!important;font-weight:600}
+.input:focus{border-color:var(--blue)!important}
+.chip{border:2px solid var(--line);font-weight:800;box-shadow:0 3px 0 var(--line)}.chip.on{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 3px 0 var(--green-s)}
+.seg{border:2px solid var(--line)}.seg button{font-weight:800}.seg button.on{background:var(--blue);color:#fff}
+.kcard .kl{font-weight:800;text-transform:uppercase;letter-spacing:.4px;font-size:11px;opacity:1;color:var(--navtext)}.kcard.dark .kl{color:rgba(255,255,255,.6)}
+.kcard .kv{font-size:30px}
+.delta{color:#46A302}.kcard.dark .delta{color:#A5ED6E}
+.ins .t{font-weight:900;color:var(--ink)}.ins .ic{border-radius:16px}
+.bar{height:10px;border-radius:6px;background:#F0F0F0}
+.msg{font-weight:600}.msg.me{background:var(--blue);color:#fff}.msg.bot{border:2px solid var(--line)}
+.tcard{background:#FFF8E6;border:2px solid #FFE3A3}.deny{border:2px solid #FFC1C1;background:#FFF1F1}
+.suggest button{border:2px solid var(--line);font-weight:800;box-shadow:0 3px 0 var(--line)}
+.req{background:var(--navy)!important}.req.risk{background:#EF4444!important}.req.risk .btn-orange{background:#fff;color:#E53E3E;box-shadow:0 4px 0 #F5B5B5}.req.risk .admin{background:rgba(255,255,255,.14)}
+.obc{background:var(--navy)}.obc h2 .o{color:var(--green)}.obc.light{background:#fff;border:2px solid var(--line)}
+.obdots i.on{background:var(--green)}
+.cartbar{background:var(--navy)}.toast{background:var(--navy);font-weight:700}
+.role{border:2px solid var(--line);font-weight:700}.role.has{border-color:#A5ED6E;background:#F2FFE6;color:#46A302}
+.tile{border:2px solid var(--line);box-shadow:0 4px 0 var(--line)}
+.prod .add{background:var(--green);box-shadow:0 3px 0 var(--green-s)}.prod .add.in{background:var(--orange);box-shadow:0 3px 0 var(--orange-s)}
+.prod .p{color:var(--ink);font-weight:900}.prod .art{background:#FFF8E6}
+.supl .m{box-shadow:0 4px 0 rgba(0,0,0,.15)}
+.pin .lab{color:var(--navy)}
+.toggle.on{background:var(--green)}
+/* big navigation */
+.nav{height:96px;border-top:2px solid var(--line);border-radius:0;background:#fff}
+.nav button{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--navtext);width:70px;padding:8px 0;border-radius:16px;gap:4px}
+.nav button .ic{font-size:28px}
+.nav button.active{color:#46A302;background:#E9FCD8}
+.nav .biji{width:80px;height:80px;margin-top:-40px;background:var(--green);border:5px solid #fff;box-shadow:0 5px 0 var(--green-s);border-radius:50%;padding:0}
+.nav .biji.active{background:var(--orange);box-shadow:0 5px 0 var(--orange-s)}
+.nav .biji .lbl,.nav-logo{display:none}
+.nav .badge{background:var(--red)}
+.scroll{padding-bottom:128px}.composer{padding-bottom:112px}.cartbar{bottom:110px}.toast{bottom:114px}
+/* ===== laptop layout ===== */
+@media (min-width:900px){
+  body{display:block}
+  .app{max-width:none;height:100vh;border:none;border-radius:0;box-shadow:none}
+  .nav{display:none;top:0;bottom:0;left:0;right:auto;width:248px;height:auto;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:8px;padding:22px 16px;border-top:none;border-right:2px solid var(--line)}
+  .nav.show{display:flex}
+  .nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-weight:900;font-size:26px;color:var(--ink);padding:6px 10px 22px}
+  .nav button{flex-direction:row;width:auto;gap:14px;font-size:14px;padding:12px 16px;justify-content:flex-start;letter-spacing:.6px}
+  .nav button .ic{font-size:26px}
+  .nav .biji{width:auto;height:auto;margin:6px 0;border:none;border-radius:16px;padding:6px 14px;display:flex;align-items:center;gap:10px;color:#fff;font-size:14px}
+  .nav .biji svg{width:40px;height:40px}.nav .biji .lbl{display:inline}
+  .nav .badge{position:static;margin-left:auto}
+  .screen{left:248px}
+  #onboard{left:0}
+  .topbar{height:84px;padding:0 max(32px,calc((100% - 1120px)/2))}
+  .topbar h1{font-size:30px}
+  .scroll{padding:6px max(32px,calc((100% - 1120px)/2)) 48px}
+  .hscroll{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));overflow:visible;margin:0;padding:2px 0 14px}
+  .kcard,.ins,.brc,.eta{width:auto}
+  .g2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+  #reqList{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px}
+  .rmap{height:460px}
+  #area{max-height:270px}#brBars{max-height:150px}#crmChart{max-height:120px}
+  #supStrip{display:flex!important;gap:18px;overflow-x:auto}
+  .chat{padding:8px max(32px,calc((100% - 820px)/2))}
+  .suggest{padding:8px max(32px,calc((100% - 820px)/2))}
+  .composer{padding:8px max(32px,calc((100% - 820px)/2)) 28px}
+  .cartbar{left:calc(248px + 32px);right:32px;bottom:28px;max-width:640px;margin:0 auto}
+  .toast{bottom:30px;left:calc(50% + 124px)}
+  .sheet{left:50%;right:auto;width:560px;bottom:28px;border-radius:26px;transform:translate(-50%,120%)}
+  .sheet.open{transform:translate(-50%,0)}
+  #onboard .row{padding:22px 40px 0}
+  .obs{display:grid;grid-template-columns:repeat(3,minmax(0,360px));justify-content:center;gap:22px;padding:18px 40px 0;overflow:visible}
+  .ob{padding:0}
+  .obc h2{font-size:32px}
+  .obc .ph{width:220px}
+  .obdots{display:none}
+  .onboard-actions{max-width:460px;width:100%;margin:0 auto;padding:22px 20px 28px}
+}
+
+/* v6: geo drill-down */
+.crumbs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:2px 0 10px}
+.crumb{border:2px solid var(--line);background:#fff;border-radius:12px;padding:7px 12px;font-weight:900;font-size:13px;color:var(--ink);box-shadow:0 3px 0 var(--line)}
+.crumb.on{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 3px 0 var(--green-s)}.crumbs .sep{color:var(--navtext);font-weight:900}
+.geo{position:relative;border:2px solid var(--line);border-radius:22px;overflow:hidden;background:#fff}
+.geo-in{position:relative;width:100%;overflow:hidden;animation:geoIn .45s cubic-bezier(.16,1,.3,1)}
+@keyframes geoIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+.geo .attr{position:absolute;left:8px;bottom:8px}
+.hot{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;background:#fff;border:2px solid var(--line);border-radius:16px;padding:5px 10px 5px 5px;box-shadow:0 4px 0 rgba(0,0,0,.15);font-weight:900;font-size:12.5px;color:var(--ink);white-space:nowrap;animation:pulseHot 2s infinite}
+.hot b{width:26px;height:26px;border-radius:9px;background:var(--green);color:#fff;display:grid;place-items:center;font-size:14px}
+@keyframes pulseHot{0%,100%{box-shadow:0 4px 0 rgba(0,0,0,.15),0 0 0 0 rgba(88,204,2,.45)}50%{box-shadow:0 4px 0 rgba(0,0,0,.15),0 0 0 8px rgba(88,204,2,0)}}
+.gpin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center}
+.gpin .lab{background:#fff;color:var(--navy);font-weight:900;font-size:11.5px;padding:4px 9px;border-radius:999px;box-shadow:0 3px 8px rgba(0,0,0,.25);white-space:nowrap}
+.gpin .dotc{width:30px;height:30px;border-radius:50%;border:3px solid #fff;display:grid;place-items:center;font-size:14px;margin-top:3px;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+.cust{position:absolute;width:10px;height:10px;border-radius:50%;background:#1CB0F6;border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 0 0 4px rgba(28,176,246,.25)}
+.gtruck{position:absolute;left:48.5%;top:18%;transform:translate(-14px,-50%);background:#fff;border-radius:999px;padding:4px 10px 4px 4px;font-weight:900;font-size:12px;color:#E53E3E;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:truckMove 6s ease-in-out infinite alternate}
+.gtruck span{width:24px;height:24px;border-radius:50%;background:#FF9600;display:grid;place-items:center}
+@keyframes truckMove{from{top:7%}to{top:40%}}
+@media (min-width:900px){.geo{max-width:860px}.hot{font-size:14px}.geo-in{width:min(100%,calc(560px * var(--ar)));margin:0 auto}}
+
+/* v7: target tag, smart sourcing agent, supplier invites, map badges */
+.obtag{align-self:flex-start;margin-top:12px;background:rgba(255,255,255,.14);color:#fff;font-weight:800;font-size:12.5px;padding:7px 12px;border-radius:999px}
+@media (max-width:380px){.agr .lw{display:none}.agr{padding:8px}.agr .km{font-size:12px}}
+.card.agent{border:2px solid #FFD8A8;background:#FFFBF5;padding:14px}
+.agl{margin:12px 0 10px;display:flex;flex-direction:column;gap:6px}
+.agr{display:flex;align-items:center;gap:8px;background:#fff;border:2px solid var(--line);border-radius:14px;padding:8px 10px;font-size:13.5px;color:var(--ink)}
+.agr b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.agr .km{color:var(--muted);font-weight:800;font-size:12.5px;white-space:nowrap}
+.agr .pill{white-space:nowrap}.agr.late{border-color:#FFC9C9}.agr.won{border-color:#A5ED6E;background:#F2FFE6}
+.agr .rk{width:22px;height:22px;border-radius:7px;background:#F0F0F0;color:var(--ink);display:grid;place-items:center;font-weight:900;font-size:12px;flex-shrink:0}
+.agrule{margin-top:10px;font-size:12px;font-weight:800;color:var(--muted);line-height:1.35}
+.rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rcard{background:#fff;border:2px solid var(--line);border-radius:18px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;min-width:0}
+.rcard .rlogo{height:56px;width:100%;display:grid;place-items:center}.rcard .rlogo img{max-width:100%;max-height:56px;object-fit:contain}
+.rcard b{font-size:13px;color:var(--ink);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.rcard span{font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.rcard .btn{margin-top:6px;width:100%;padding:0 6px;height:32px}
+.hotb{position:absolute;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;border:3px solid #fff;font-weight:900;font-size:15px;display:grid;place-items:center;padding:0;box-shadow:0 3px 0 rgba(0,0,0,.22);animation:pulseHot 2s infinite;cursor:pointer}
+@media (min-width:900px){.hotb{width:40px;height:40px;font-size:17px}.rgrid{max-width:560px}}
+.tcx{display:flex;gap:10px;align-items:flex-start;margin-top:9px;font-size:14px;line-height:1.35;color:var(--text)}.tcx span{font-size:17px;width:24px;flex-shrink:0;text-align:center}.tcx i{font-style:normal;color:#9A9A9A;font-weight:700;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ONBOARDING -->
+<section class="screen active" id="onboard">
+  <div class="row" style="padding:16px 20px 0"><span class="logo" id="obLogo"></span><span class="spacer"></span><span class="pill p-green">🇲🇾 Malaysia</span></div>
+  <div class="obs" id="obs">
+    <div class="ob"><div class="obc"><h2>Every café<br>supply. <span class="o">One app.</span></h2><div style="display:flex;gap:6px;flex-wrap:wrap"><div class="obtag">☕ Small cafés &amp; kopitiams · 1–5 branches</div><div class="obtag" style="background:rgba(88,204,2,.28)">🔐 Built with TideCloak</div></div><div class="ph"><img src="img/ob_home.jpg" alt=""></div></div></div>
+    <div class="ob"><div class="obc light"><h2>Biji <span class="o">predicts.</span><br>You approve.</h2><div class="ph"><img src="img/ob_biji.jpg" alt=""></div></div></div>
+    <div class="ob"><div class="obc"><h2>No one moves<br>money <span class="o">alone.</span></h2><div class="ph"><img src="img/ob_quorum.jpg" alt=""></div></div></div>
+  </div>
+  <div class="obdots" id="obdots"><i class="on"></i><i></i><i></i></div>
+  <div class="onboard-actions">
+    <button class="btn btn-orange btn-block" id="btnStart">Start <span class="arrow">➜</span></button>
+    <button class="btn btn-line btn-block" id="btnLive">Sign in with TideCloak</button>
+  </div>
+</section>
+
+<!-- HOME -->
+<section class="screen" id="home">
+  <div class="topbar">
+    <span class="logo" id="homeLogo" style="font-size:22px"></span>
+    <span class="spacer"></span><span class="mode mode-demo" id="modeChip" style="margin-right:8px">Demo</span><button class="cbtn" data-open="settings" aria-label="Settings" style="margin-right:8px">⚙️</button>
+    <button class="cbtn" data-go="audit" aria-label="Activity">🔔<span class="dot" id="bellDot">3</span></button>
+  </div>
+  <div class="scroll">
+    <div class="fu" style="margin:0 2px 12px"><div class="muted" style="font-weight:600" id="cafeName">Kedai Kopi Anjung · Sunway</div>
+      <div class="serif" style="font-size:30px;color:var(--ink);line-height:1.1" id="hello">Selamat pagi, Hafiz</div></div>
+    <div class="hscroll fu" id="kpis"></div>
+    <div class="sec" style="margin-top:8px"><h3>🫘 Biji AI</h3><span class="sim">simulated AI</span></div>
+    <div class="hscroll" id="insights"></div>
+    <div class="g2">
+    <div class="card reveal" style="padding:14px 12px 6px;margin-top:4px">
+      <div class="row" style="padding:0 4px;flex-wrap:wrap;row-gap:8px"><div><span class="muted" style="font-weight:600">Revenue</span><div class="serif" style="font-size:26px;color:var(--ink);white-space:nowrap" id="revTotal">RM 0</div></div><span class="spacer"></span>
+        <div class="seg" id="revSeg" style="width:170px"><button class="on" data-r="d">Today</button><button data-r="w">Week</button><button data-r="m">Month</button></div></div>
+      <div class="panelw" style="margin-top:8px"><svg id="area" width="100%" viewBox="0 0 340 170" style="display:block;touch-action:pan-y"></svg></div>
+    </div>
+    <div class="card reveal"><div class="row"><b style="color:var(--ink)">Supplier spend</b><span class="spacer"></span><span class="pill p-gray">October</span></div>
+      <div class="row" style="margin-top:8px;gap:16px"><svg id="donut" width="128" height="128" viewBox="0 0 128 128"></svg><div id="donutLegend" style="flex:1"></div></div></div>
+    </div>
+    <div class="sec reveal"><h3>Branches</h3><a data-go="branches">Map ›</a></div>
+    <div class="hscroll reveal" id="brStrip"></div>
+    <div class="sec reveal"><h3>Running low</h3><a data-go="erp">All ›</a></div>
+    <div id="lowList"></div>
+  </div>
+</section>
+
+<!-- SHOP -->
+<section class="screen" id="shop">
+  <div class="topbar"><h1>Shop supplies</h1><button class="cbtn" id="cartBtn" aria-label="Cart">🛒<span class="dot" id="cartDot" style="display:none">0</span></button></div>
+  <div class="scroll">
+    <div class="search"><span>🔍</span><input id="q" placeholder="Search beans, milk, cups, spoons…"></div>
+    <div class="hscroll" id="supStrip" style="margin-top:12px;padding-bottom:4px"></div>
+    <div class="chips" id="cats"></div>
+    <div class="row" style="margin-top:6px"><span class="pill p-green">✓ No minimum order</span><span class="pill p-orange">🚚 Klang Valley delivery</span></div>
+    <div class="grid" id="grid"></div>
+    <p class="muted" style="text-align:center;margin-top:14px">Illustrative wholesale prices · fictional suppliers</p>
+  </div>
+  <div class="cartbar" id="cartbar"><div style="flex:1"><div style="font-weight:800" id="cbTotal">RM 0</div><div style="font-size:11.5px;opacity:.8" id="cbInfo"></div></div><button class="btn btn-orange btn-sm" id="cbGo">Review order ➜</button></div>
+</section>
+
+<!-- BIJI (AI) -->
+<section class="screen" id="biji">
+  <div class="topbar"><button class="cbtn" data-go="home">←</button><div style="text-align:center"><h1>Biji</h1><div class="muted" style="font-size:11px;font-weight:600">your AI supply assistant · <span class="sim">simulated</span></div></div><button class="cbtn" id="clearChat">🧹</button></div>
+  <div class="chat" id="chatLog"></div>
+  <div class="suggest" id="suggest"></div>
+  <form class="composer" id="composer" autocomplete="off"><input class="input" id="chatInput" placeholder="Ask Biji in English or Bahasa…"><button class="btn btn-green" style="width:48px;padding:0">➤</button></form>
+</section>
+
+<!-- BRANCHES -->
+<section class="screen" id="branches">
+  <div class="topbar"><button class="cbtn" data-go="home">←</button><h1>Branches</h1><span class="pill p-green">4 live</span></div>
+  <div class="scroll">
+    <div class="crumbs" id="crumbs"></div>
+    <div class="geo" id="geo"></div>
+    <div id="geoList" style="margin-top:12px"></div>
+    <div class="card cream" style="margin-top:6px"><div class="row" style="align-items:flex-start"><span id="m-br"></span><div style="flex:1"><b style="color:var(--ink)">Move 12 L milk Seremban → Sunway</b><div class="muted" style="color:var(--text)">Supplier truck +25 min late · saves RM 86</div></div></div>
+      <button class="btn btn-green btn-sm" style="margin-top:10px" id="xferBtn">Transfer stock <span class="sim" style="background:rgba(255,255,255,.2);color:#fff">sim</span></button></div>
+    <div class="card"><b style="color:var(--ink)">Revenue today</b><svg id="brBars" width="100%" viewBox="0 0 330 160" style="margin-top:8px"></svg></div>
+  </div>
+</section>
+
+<!-- SUPPLIERS -->
+<section class="screen" id="suppliers">
+  <div class="topbar"><h1>Suppliers</h1><span class="pill p-green">5 active</span></div>
+  <div class="scroll">
+    <div class="card agent" id="agentCard"></div>
+    <div class="sec" id="mapCard" style="margin-top:2px"><h3>Live deliveries</h3><span class="pill p-orange">2 on the way</span></div>
+    <div class="rmap" id="rmap"><div class="rmap-in" id="rmapIn"></div>
+      <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
+      <div class="attr">Imagery © Google · business names blurred · GPS simulated</div></div>
+    <div class="hscroll" id="etas" style="margin-top:12px"></div>
+    <div class="sec"><h3>Reminders</h3><span class="pill p-green"><span class="waico"></span> WhatsApp</span></div>
+    <div id="reminders"></div>
+    <div class="sec"><h3>Messages</h3><span class="muted" style="font-size:12px">checked by Biji</span></div>
+    <div class="wa-panel"><div class="wa-head"><span class="waico big"></span> Supplier chats</div><div id="waList" style="padding-bottom:6px"></div></div>
+    <div class="sec"><h3>All suppliers</h3></div>
+    <div id="supList"></div>
+    <div class="sec"><h3>Invite suppliers</h3><span class="pill p-green"><span class="waico"></span> WhatsApp</span></div>
+    <div class="rgrid" id="roasters"></div>
+    <div class="muted" style="font-size:11.5px;margin:4px 2px 10px">Real Klang Valley businesses · not partners yet · invite only</div>
+  </div>
+</section>
+
+<!-- APPROVALS -->
+<section class="screen" id="approvals">
+  <div class="topbar"><h1>Approvals</h1><span class="pill p-gold">2 of 3 rule</span></div>
+  <div class="scroll">
+    <div class="card">
+      <div class="row"><b style="color:var(--ink)">Your authority</b><span class="spacer"></span><span class="pill p-gray" id="tokenSrc">simulated token</span></div>
+      <p class="muted" style="margin:6px 0 10px">Hafiz's TideCloak roles. <b>Biji has none.</b></p>
+      <div id="roles"></div>
+      <button class="btn btn-line btn-sm" id="refreshToken">↻ Refresh token</button>
+    </div>
+    <div id="reqList"></div>
+    <div class="card"><b style="color:var(--ink)">🔐 Why TideCloak</b>
+      <div class="tcx"><span>👥</span><div><b>2 of 3 owners</b> approve orders over RM 500 or new bank details <i>· Quorum-Enforced Governance</i></div></div>
+      <div class="tcx"><span>🗝️</span><div><b>No master key</b>: not the manager, not Biji, not us <i>· no god-mode</i></div></div>
+      <div class="tcx"><span>🔒</span><div><b>Bank details sealed</b> end-to-end <i>· E2EE vault</i></div></div></div>
+  </div>
+</section>
+
+<!-- ERP -->
+<section class="screen" id="erp">
+  <div class="topbar"><button class="cbtn" data-go="home">←</button><h1>Stock &amp; ERP</h1><span style="width:42px"></span></div>
+  <div class="scroll">
+    <div class="seg" id="erpSeg"><button class="on" data-t="stock">Stock</button><button data-t="orders">Orders</button><button data-t="inv">Invoices</button><button data-t="pl">P&amp;L</button></div>
+    <div id="erpBody" style="margin-top:12px"></div>
+    <div class="card" style="margin-top:6px"><b style="color:var(--ink)">Connect your ERP</b><p class="muted" style="margin:6px 0 10px">Stock, orders &amp; invoices → CSV · e-invoice records.</p>
+      <div class="row"><button class="btn btn-green btn-sm" id="csvBtn">⬇ Export CSV</button><button class="btn btn-line btn-sm" id="einvBtn">e-Invoice <span class="sim">sim</span></button></div></div>
+  </div>
+</section>
+
+<!-- CRM -->
+<section class="screen" id="crm">
+  <div class="topbar"><button class="cbtn" data-go="home">←</button><h1>Customers</h1><span style="width:42px"></span></div>
+  <div class="scroll">
+    <div class="card dark"><div class="row"><div><div style="font-size:12px;opacity:.75;font-weight:600">Regulars this month</div><div class="big">214</div></div><span class="spacer"></span><div style="text-align:right"><div style="font-size:12px;opacity:.75">returning</div><b style="font-size:20px">63%</b></div></div>
+      <svg id="crmChart" width="100%" viewBox="0 0 300 70" style="margin-top:8px"></svg></div>
+    <div class="card cream"><div class="row" style="align-items:flex-start"><span id="m-crm"></span><div style="flex:1"><b style="color:var(--ink)">3 regulars slipping away</b><div class="muted" style="color:var(--text)">No visit in 9–19 days.</div></div></div>
+      <button class="btn btn-orange btn-sm" style="margin-top:10px" id="voucherBtn" style="background:#25D366"><span class="waico"></span> Send voucher</button></div>
+    <div class="sec"><h3>Top regulars</h3><span class="muted" style="font-size:12px">synthetic</span></div>
+    <div id="custList"></div>
+  </div>
+</section>
+
+<!-- VAULT -->
+<section class="screen" id="vault">
+  <div class="topbar"><button class="cbtn" data-go="home">←</button><h1>Vault</h1><span class="pill p-green" id="vaultMode">E2EE · demo</span></div>
+  <div class="scroll">
+    <div class="card dark"><b>🔐 Sealed on your phone</b><p style="margin:6px 0 0;font-size:13px;opacity:.8;line-height:1.5">Bank details &amp; price deals are encrypted on the phone. Server and Biji see only ciphertext. <span id="vaultExplain"></span></p></div>
+    <textarea class="input" id="noteText" placeholder="e.g. Bukit Roastery: House Blend RM 76/kg locked until March"></textarea>
+    <div class="row" style="margin:10px 0 0"><span class="spacer"></span><button class="btn btn-green btn-sm" id="addNote">Seal it</button></div>
+    <div class="sec"><h3>Sealed items</h3></div>
+    <div id="notes"></div>
+  </div>
+</section>
+
+<!-- AUDIT -->
+<section class="screen" id="audit">
+  <div class="topbar"><button class="cbtn" data-go="home">←</button><h1>Activity</h1><button class="cbtn" id="clearAudit">🗑️</button></div>
+  <div class="scroll"><p class="muted" style="margin-top:0">Every AI suggestion, approval and payment decision, newest first.</p><div id="auditList"></div></div>
+</section>
+
+<nav class="nav" id="nav">
+  <div class="nav-logo" id="navLogo"></div>
+  <button data-go="home" class="active"><span class="ic">🏠</span>Home</button>
+  <button data-go="shop"><span class="ic">🛍️</span>Shop</button>
+  <button class="biji" data-go="biji" aria-label="Biji AI"><span id="navBiji"></span><span class="lbl">Ask Biji</span></button>
+  <button data-go="suppliers"><span class="ic">🚚</span>Suppliers</button>
+  <button data-go="approvals"><span class="ic">✅</span>Approvals<span class="badge" id="apBadge">2</span></button>
+</nav>
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="sheet" id="sheet"><div class="grabber"></div><div id="sheetBody"></div></div>
+<div class="toast" id="toast"></div>
+<div class="confetti" id="confetti"></div>
+</div>
+
+<script>
+(function () {
+"use strict";
+const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const RM = v => "RM " + Number(v).toLocaleString("en-MY", { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 });
+const store = { get(k, d) { try { const v = localStorage.getItem("kk_" + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+                set(k, v) { try { localStorage.setItem("kk_" + k, JSON.stringify(v)); } catch (e) {} } };
+
+/* ---------- Biji: original mascot (a coffee bean with a leaf) ---------- */
+function biji(mood = "happy", size = 120) {
+  const b = Math.max(14, Math.round(size * .3));
+  const badge = mood === "alert" ? `<span style="position:absolute;right:-2px;top:-2px;width:${b}px;height:${b}px;border-radius:50%;background:#FF4B4B;color:#fff;font-weight:900;font-size:${Math.round(b * .7)}px;display:grid;place-items:center;border:2px solid #fff">!</span>`
+    : mood === "proud" ? `<span style="position:absolute;right:-4px;top:-6px;font-size:${b}px">✨</span>` : "";
+  return `<span style="position:relative;display:inline-block;width:${size}px;height:${size}px;vertical-align:middle;flex-shrink:0"><img src="img/biji.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block">${badge}</span>`;
+}
+$("#obLogo").innerHTML = '<img src="img/logo.png" alt="KopiKita" style="height:36px;display:block">';
+$("#obs").addEventListener("scroll", () => { const o = $("#obs"), i = Math.round(o.scrollLeft / o.clientWidth); $$("#obdots i").forEach((d, k) => d.classList.toggle("on", k === i)); }, { passive: true });
+
+$("#m-crm").innerHTML = biji("happy", 46);
+$("#navBiji").innerHTML = biji("happy", 54);
+$("#navLogo").innerHTML = '<img src="img/logo.png" alt="KopiKita" style="height:42px;display:block">';
+
+
+/* ---------- KopiKita logo (original) ---------- */
+function LOGO(s) { return `<svg width="${s}" height="${s}" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="18" fill="#100F3E"/><path d="M15 27h29v5c0 9.5-6.5 17-14.5 17S15 41.5 15 32z" fill="#FF9600"/><path d="M44 30.5h3.2a6 6 0 0 1 0 12H43" stroke="#FF9600" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="29.5" cy="16" rx="6.5" ry="8.5" fill="#FFFFFF" transform="rotate(-22 29.5 16)"/><path d="M32 8.5c-4.2 4.2-2 10-4.6 15" stroke="#100F3E" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M20 53h24" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity=".35"/></svg>`; }
+/* ---------- product art (simple original illustrations) ---------- */
+function art(kind, s = 86) {
+  const k = {
+    bag: `<path d="M18 16h28l4 40H14z" fill="#C9A27A"/><path d="M18 16h28l-2-6H20z" fill="#B48A60"/><rect x="21" y="28" width="22" height="16" rx="3" fill="#100F3E"/><ellipse cx="32" cy="36" rx="4" ry="5.5" fill="#C9A27A" transform="rotate(-15 32 36)"/>`,
+    bag2: `<path d="M18 16h28l4 40H14z" fill="#8B5A37"/><path d="M18 16h28l-2-6H20z" fill="#6A3E24"/><rect x="21" y="28" width="22" height="16" rx="3" fill="#FF9600"/><text x="32" y="40" font-size="8" font-weight="800" text-anchor="middle" fill="#fff" font-family="Nunito">KOPI</text>`,
+    milk: `<path d="M20 22l6-10h12l6 10v34H20z" fill="#fff" stroke="#cfe3cf" stroke-width="2"/><path d="M20 22h24v8H20z" fill="#58A700"/><rect x="25" y="38" width="14" height="10" rx="2" fill="#DDF7DF"/>`,
+    oat: `<path d="M20 22l6-10h12l6 10v34H20z" fill="#F4E6CC" stroke="#e5d2ae" stroke-width="2"/><path d="M20 22h24v8H20z" fill="#FF9600"/><path d="M32 36c4 4 4 10 0 14c-4-4-4-10 0-14z" fill="#C9A27A"/>`,
+    cup: `<path d="M18 18h28l-4 38H22z" fill="#fff" stroke="#d6e6d6" stroke-width="2"/><path d="M19.5 30h25l-1.3 14H20.8z" fill="#FF9600"/><rect x="16" y="13" width="32" height="6" rx="3" fill="#100F3E"/>`,
+    lid: `<ellipse cx="32" cy="42" rx="22" ry="7" fill="#100F3E"/><path d="M14 40c0-10 8-16 18-16s18 6 18 16z" fill="#58A700"/><rect x="36" y="27" width="6" height="4" rx="2" fill="#FFFFFF"/>`,
+    syrup: `<rect x="22" y="22" width="20" height="34" rx="5" fill="#B5651D"/><rect x="27" y="10" width="10" height="13" rx="2" fill="#100F3E"/><rect x="24" y="32" width="16" height="12" rx="2" fill="#FFF6EA"/>`,
+    syrup2: `<rect x="22" y="22" width="20" height="34" rx="5" fill="#6A3E24"/><rect x="27" y="10" width="10" height="13" rx="2" fill="#FF9600"/><rect x="24" y="32" width="16" height="12" rx="2" fill="#FFF6EA"/>`,
+    pitcher: `<path d="M18 20h24l-3 34H21z" fill="#cdd6cd"/><path d="M42 26c8 0 8 16 0 16" stroke="#a9b5a9" stroke-width="4" fill="none"/><path d="M18 20l-4-4h12z" fill="#b9c4b9"/>`,
+    tamper: `<rect x="27" y="10" width="10" height="26" rx="5" fill="#8B5A37"/><rect x="18" y="36" width="28" height="8" rx="3" fill="#a9b5a9"/><rect x="16" y="44" width="32" height="8" rx="3" fill="#cdd6cd"/>`,
+    spoon: `<ellipse cx="24" cy="20" rx="7" ry="10" fill="#C9A27A"/><rect x="22" y="28" width="4" height="28" rx="2" fill="#C9A27A"/><rect x="36" y="10" width="5" height="46" rx="2.5" fill="#B48A60"/><rect x="45" y="12" width="5" height="44" rx="2.5" fill="#C9A27A"/>`,
+    burr: `<circle cx="32" cy="34" r="18" fill="#a9b5a9"/><circle cx="32" cy="34" r="7" fill="#FFFFFF"/>${Array.from({length: 10}, (_, i) => `<rect x="30" y="12" width="4" height="8" rx="1" fill="#8c998c" transform="rotate(${i * 36} 32 34)"/>`).join("")}`,
+    tabs: `<rect x="16" y="20" width="32" height="34" rx="6" fill="#58A700"/><circle cx="26" cy="34" r="5" fill="#fff"/><circle cx="38" cy="34" r="5" fill="#fff"/><circle cx="32" cy="45" r="5" fill="#fff"/><rect x="22" y="14" width="20" height="8" rx="3" fill="#100F3E"/>`,
+  }[kind] || "";
+  return `<svg width="${s}" height="${s}" viewBox="0 0 64 64">${k}</svg>`;
+}
+
+/* ---------- data (synthetic) ---------- */
+const SUP = {
+  bukit:  { name: "Bukit Roastery", cat: "Coffee beans", area: "Kepong", color: "#6A3E24", rating: 98, lead: 2, next: "Sat, 9:00 AM", xy: [150, 32] },
+  lembah: { name: "Lembah Dairy", cat: "Fresh & oat milk", area: "Shah Alam", color: "#1CA0C8", rating: 95, lead: 1, next: "Tomorrow, 7:30 AM", xy: [40, 122] },
+  pakmat: { name: "Pak Mat Packaging", cat: "Cups, straws & matcha", area: "Puchong", color: "#FF9600", rating: 91, lead: 2, next: "Mon, 10:00 AM", xy: [150, 168] },
+  barista:{ name: "Selangor Barista Supply", cat: "Machines & service", area: "Cheras", color: "#58A700", rating: 97, lead: 3, next: "On request", xy: [252, 128] },
+  syrupku:{ name: "Syrupku", cat: "Syrups & sauces", area: "Subang Jaya", color: "#B5651D", rating: 93, lead: 2, next: "Tue, 2:00 PM", xy: [92, 134] },
+};
+const SUP_IMG = { bukit: "img/s_bukit.png", lembah: "img/s_lembah.png", pakmat: "img/s_pakmat.png", barista: "img/s_barista.png", syrupku: "img/s_syrupku.png" };
+const supAv = (k, sz = 42) => `<img src="${SUP_IMG[k]}" alt="" style="width:${sz}px;height:${sz}px;border-radius:13px;object-fit:cover;flex-shrink:0;box-shadow:0 3px 0 rgba(0,0,0,.12)">`;
+const P = [
+  { id: "house", name: "House Blend beans", unit: "1 kg bag", u: "kg", price: 78, sup: "bukit", cat: "Beans", img: "img/p_house.jpg", stock: 4.2, use: [1.4, 1.5, 1.6, 1.5, 1.8, 2.3, 2.1], pack: 1, tag: "Best seller" },
+  { id: "kopio", name: "Kopi O Liberica blend", unit: "1 kg bag", u: "kg", price: 38, sup: "bukit", cat: "Beans", img: "img/p_kopio.jpg", stock: 6, use: [.6, .7, .7, .6, .8, .9, .9], pack: 1, tag: "Local" },
+  { id: "milk", name: "Fresh milk", unit: "1 L", u: "L", price: 7.2, sup: "lembah", cat: "Milk", img: "img/p_milk.jpg", stock: 18, use: [12, 13, 14, 13, 15, 19, 18], pack: 12 },
+  { id: "oat", name: "Barista oat milk", unit: "1 L", u: "L", price: 11.9, sup: "lembah", cat: "Milk", img: "img/p_oat.jpg", stock: 9, use: [2.5, 3, 3, 2.8, 3.2, 4, 3.6], pack: 6 },
+  { id: "cup", name: "Kraft cups 12 oz", unit: "pack of 50", u: "cups", price: 16, sup: "pakmat", cat: "Cups", img: "img/cup_kraft.jpg", stock: 420, use: [180, 190, 200, 195, 230, 290, 270], pack: 50 },
+  { id: "cupw", name: "White cups 8 oz", unit: "pack of 50", price: 12, sup: "pakmat", cat: "Cups", img: "img/cup_white.jpg" },
+  { id: "cupb", name: "Black cups 16 oz", unit: "pack of 50", price: 19, sup: "pakmat", cat: "Cups", img: "img/cup_black.jpg", tag: "New" },
+  { id: "straw", name: "Paper straws", unit: "pack of 100", u: "straws", price: 9, sup: "pakmat", cat: "Cups", img: "img/straws.jpg", tag: "Eco", stock: 300, use: [110, 115, 120, 118, 125, 140, 130], pack: 100 },
+  { id: "caramel", name: "Caramel syrup", unit: "750 ml", u: "btl", price: 32, sup: "syrupku", cat: "Syrups", img: "img/p_syrup.jpg", stock: 1, use: [.3, .3, .25, .3, .35, .45, .4], pack: 1 },
+  { id: "matcha", name: "Matcha powder", unit: "500 g", price: 68, sup: "pakmat", cat: "Matcha", img: "img/p_matcha.jpg", tag: "Trending" },
+];
+const byId = Object.fromEntries(P.map(p => [p.id, p]));
+const WEEK = { 1: 2050, 2: 1980, 3: 2140, 4: 2310, 5: 2690, 6: 3420, 0: 3180 }; // revenue by weekday (RM)
+const PRICE_PER_CUP = 11.4, COST_PER_CUP = 2.14;
+const CUSTOMERS = [
+  { name: "Farah", drink: "Iced Spanish latte", visits: 11, last: 1, gap: 3, spend: 152, c: "#FF9600" },
+  { name: "Daniel", drink: "Kopi O kosong", visits: 16, last: 0, gap: 2, spend: 118, c: "#58A700" },
+  { name: "Mei", drink: "Oat flat white", visits: 7, last: 19, gap: 4, spend: 96, c: "#B5651D" },
+  { name: "Arjun", drink: "Cold brew", visits: 9, last: 2, gap: 3, spend: 131, c: "#1CA0C8" },
+  { name: "Siti", drink: "Gula Melaka latte", visits: 6, last: 16, gap: 5, spend: 84, c: "#8B5A37" },
+  { name: "Jason", drink: "Double espresso", visits: 13, last: 9, gap: 2, spend: 140, c: "#5b8c5a" },
+];
+const ADMINS = [{ id: "aisyah", name: "Aisyah", role: "Owner", c: "#FF9600" }, { id: "kumar", name: "Kumar", role: "Finance", c: "#1CA0C8" }, { id: "weiling", name: "Wei Ling", role: "Operations", c: "#8B5A37" }];
+const QUORUM = 2, SMALL_LIMIT = 500;
+const SCAM = { from: "Bukit Roastery?", num: "+60 11-•••• 7782", text: "Hi boss, our bank acc under maintenance. Pls pay INV-2207 RM 2,480 to our NEW account 8012-3344-5521 (BR Trading Ent.) today ya. Urgent, thanks!" };
+
+/* ---------- state ---------- */
+const S = {
+  mode: "demo", roles: store.get("roles", ["cafe-staff", "po-approve-small", "_tide_supplierbank.selfdecrypt"]),
+  audit: store.get("audit", []), cart: store.get("cart", {}), reqs: store.get("reqs", null), notes: [], cat: "All", erpTab: "stock",
+};
+if (!S.reqs) S.reqs = [{ id: "BANK-77", kind: "bank", title: "Change bank account · Bukit Roastery", amount: 2480, by: "WhatsApp from an unknown number", needs: "supplier-bank-edit", ok: [], no: [], status: "pending" }];
+
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2200); }
+function confetti() { const c = $("#confetti"), cols = ["#FF9600", "#100F3E", "#F2B705", "#8B5A37", "#5b8c5a", "#fff"];
+  c.innerHTML = Array.from({ length: 60 }, (_, i) => `<i style="left:${Math.random() * 100}%;background:${cols[i % 6]};animation-delay:${Math.random() * .4}s"></i>`).join(""); setTimeout(() => c.innerHTML = "", 2000); }
+function log(e) { e.ts = Date.now(); S.audit.unshift(e); S.audit = S.audit.slice(0, 200); store.set("audit", S.audit); }
+const saveReqs = () => store.set("reqs", S.reqs);
+const time = ts => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+function hasRole(r) { if (S.mode === "live" && S.iam) { try { return S.iam.hasRealmRole(r); } catch (e) { return false; } } return S.roles.includes(r); }
+
+/* ---------- AI (on-device forecasting + anomaly rules) ---------- */
+const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+function forecast(p) {
+  if (p.stock === undefined) return null;
+  const daily = avg(p.use), days = p.stock / daily, lead = SUP[p.sup].lead;
+  const need = days < lead + 2;
+  const qty = need ? Math.max(p.pack, Math.ceil((daily * (lead + 5) - p.stock) / p.pack) * p.pack) : 0;
+  const packs = p.pack > 1 && p.u !== "kg" && p.u !== "L" && p.u !== "btl" ? qty / p.pack : qty;
+  return { daily, days, need, qty, cost: Math.round(packs * p.price * 100) / 100 };
+}
+function draftPO() {
+  const lines = P.map(p => ({ p, f: forecast(p) })).filter(x => x.f && x.f.need);
+  const total = Math.round(lines.reduce((s, x) => s + x.f.cost, 0) * 100) / 100;
+  return { lines, total, suppliers: new Set(lines.map(x => x.p.sup)).size };
+}
+function scamCheck(msg) {
+  const flags = [];
+  if (/new account|akaun baru|tukar akaun|bank acc|account.*(change|maintenance)/i.test(msg.text)) flags.push("Asks to pay a new bank account");
+  if (/unknown|•/.test(msg.num)) flags.push("Sent from a number not on file");
+  if (/\(([^)]+)\)/.test(msg.text) && !/Bukit Roastery Sdn/i.test(msg.text)) flags.push("Payee name differs from the supplier");
+  if (/urgent|today|segera|hari ini|asap/i.test(msg.text)) flags.push("Pressure: 'urgent, today'");
+  if (/INV-2207/.test(msg.text)) flags.push("Copies a real open invoice (INV-2207)");
+  return { flags, risk: flags.length >= 3 ? "HIGH" : flags.length ? "MEDIUM" : "LOW" };
+}
+const churn = () => CUSTOMERS.filter(c => c.last > 2 * c.gap);
+
+/* ---------- navigation ---------- */
+function go(id, scrollTo) {
+  $$(".screen").forEach(s => s.classList.toggle("active", s.id === id));
+  $("#nav").classList.toggle("show", id !== "onboard");
+  $$("#nav button").forEach(b => b.classList.toggle("active", b.dataset.go === id));
+  ({ branches: renderBranches, home: renderHome, shop: renderShop, suppliers: renderSuppliers, approvals: renderApprovals, erp: renderERP, crm: renderCRM, vault: renderNotes, audit: renderAudit }[id] || (() => {}))();
+  if (id === "biji") setTimeout(() => $("#chatLog").scrollTop = 1e9, 50);
+  setTimeout(observe, 60);
+  const scr = $("#" + id + " .scroll"); if (scr) scr.scrollTop = 0;
+  if (scrollTo && scr) setTimeout(() => { const el = document.getElementById(scrollTo); if (el) scr.scrollTo({ top: el.offsetTop - 8, behavior: "smooth" }); }, 80);
+  try { history.replaceState(null, "", "#" + id); } catch (e) {}
+}
+window.addEventListener("hashchange", () => { const el = document.getElementById(location.hash.slice(1)); if (el && el.classList.contains("screen") && !el.classList.contains("active")) go(el.id); });
+document.addEventListener("click", e => { const g = e.target.closest("[data-go]"); if (g) { e.preventDefault(); go(g.dataset.go, g.dataset.scroll); } if (e.target.closest("[data-open]")) openSettings(); });
+$("#btnStart").onclick = () => { const o = $("#obs"), i = Math.round(o.scrollLeft / o.clientWidth); if (i < 2) { o.scrollTo({ left: (i + 1) * o.clientWidth, behavior: "smooth" }); return; } store.set("onboarded", true); go("home"); };
+$("#btnLive").onclick = () => enableLive(true);
+
+/* ---------- charts ---------- */
+function barChart(svg, vals, labels, hi) {
+  const W = 330, H = 150, max = Math.max(...vals) * 1.15, bw = 30, gap = (W - 20 - bw * vals.length) / (vals.length - 1);
+  let s = "";
+  vals.forEach((v, i) => { const h = (v / max) * 110, x = 10 + i * (bw + gap), y = 122 - h, on = i === hi;
+    s += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="10" fill="${on ? "#FF9600" : "#100F3E"}" opacity="${on ? 1 : .82}"/>`;
+    s += `<text x="${x + bw / 2}" y="142" font-size="11" text-anchor="middle" fill="#6b7b6b" font-family="Nunito" font-weight="600">${labels[i]}</text>`;
+    if (on || v === Math.max(...vals)) s += `<text x="${x + bw / 2}" y="${y - 6}" font-size="10.5" text-anchor="middle" fill="${on ? "#FF9600" : "#100F3E"}" font-family="Nunito" font-weight="800">${(v / 1000).toFixed(1)}k</text>`; });
+  svg.innerHTML = s;
+}
+function spark(svg, vals, color = "#fff") {
+  const W = +svg.getAttribute("width"), H = +svg.getAttribute("height"), mn = Math.min(...vals), mx = Math.max(...vals);
+  const pts = vals.map((v, i) => [i * (W - 6) / (vals.length - 1) + 3, H - 5 - (v - mn) / (mx - mn || 1) * (H - 12)]);
+  svg.innerHTML = `<polyline points="${pts.map(p => p.join(",")).join(" ")}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="${pts[pts.length - 1][0]}" cy="${pts[pts.length - 1][1]}" r="4" fill="#FF9600" stroke="#fff" stroke-width="2"/>`;
+}
+function last7() { const out = []; for (let i = 6; i >= 0; i--) { const d = new Date(Date.now() - i * 864e5); out.push({ d, v: WEEK[d.getDay()] }); } return out; }
+
+/* ---------- WhatsApp (real deep link: opens WhatsApp with the message ready to send) ---------- */
+const WA = s => `<svg width="${s}" height="${s}" viewBox="0 0 32 32" style="display:block"><path d="M16 3C8.8 3 3 8.7 3 15.8c0 2.5.7 4.9 2 6.9L3.2 29l6.5-1.7c1.9 1 4.1 1.6 6.3 1.6 7.2 0 13-5.7 13-12.8C29 8.7 23.2 3 16 3z" fill="#25D366"/><path d="M16 5.2c-6 0-10.8 4.8-10.8 10.6 0 2.2.7 4.2 1.9 5.9l-1.2 3.6 3.8-1.2c1.7 1.1 3.8 1.8 6.1 1.8 6 0 10.8-4.8 10.8-10.6S22 5.2 16 5.2z" fill="#25D366" stroke="#fff" stroke-width="1.6"/><path d="M12.4 10.2c-.3-.6-.5-.6-.8-.6h-.7c-.3 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.4 3.8 5.9 5.2 2.9 1.1 3.5.9 4.2.9.6-.1 2.1-.8 2.4-1.7.3-.8.3-1.6.2-1.7-.1-.2-.3-.2-.7-.4l-2.3-1.1c-.3-.1-.5-.2-.8.2-.2.3-.9 1.1-1.1 1.3-.2.2-.4.3-.7.1-.4-.2-1.5-.5-2.8-1.7-1-.9-1.7-2-1.9-2.4-.2-.4 0-.5.2-.7l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.5 0-.6l-1.2-2.5z" fill="#fff"/></svg>`;
+function paintWA() { $$(".waico").forEach(el => { if (!el.dataset.p) { el.innerHTML = WA(el.classList.contains("big") ? 24 : 16); el.style.display = "inline-block"; el.style.verticalAlign = "middle"; el.dataset.p = 1; } }); }
+function waSend(text, label) {
+  log({ kind: "rem", title: "WhatsApp · " + label, d: text.slice(0, 70) });
+  const url = "https://wa.me/?text=" + encodeURIComponent(text);
+  if (!navigator.webdriver) { try { window.open(url, "_blank", "noopener"); } catch (e) {} }
+  toast("WhatsApp opened with your message ✓");
+}
+
+/* ---------- scroll reveal ---------- */
+const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .1 }) : null;
+function observe() { $$(".reveal:not(.in)").forEach(el => io ? io.observe(el) : el.classList.add("in")); }
+
+/* ---------- dashboard charts ---------- */
+function smooth(pts) { let d = `M${pts[0][0]},${pts[0][1]}`; for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+  d += ` C${p1[0] + (p2[0] - p0[0]) / 6},${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6},${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]},${p2[1]}`; } return d; }
+let REV = "d";
+function revData() { if (REV === "w") { const d = last7(); return { vals: d.map(x => x.v), labels: d.map(x => x.d.toLocaleDateString("en-MY", { weekday: "short" })), full: d.map(x => x.d.toLocaleDateString("en-MY", { weekday: "long" })) }; }
+  const vals = [], labels = [], full = []; for (let i = 29; i >= 0; i--) { const d = new Date(Date.now() - i * 864e5); vals.push(Math.round(WEEK[d.getDay()] * (0.9 + 0.2 * Math.abs(Math.sin(i * 1.7))))); labels.push(i % 7 === 0 ? d.getDate() + "/" + (d.getMonth() + 1) : ""); full.push(d.toLocaleDateString("en-MY", { day: "numeric", month: "short" })); }
+  return { vals, labels, full }; }
+function areaChart() {
+  // Soft pill bars, one active bar with a value chip (style per the team's spec). Tap any bar to inspect it.
+  let vals, labels, active, total, top;
+  const today = last7()[6].v;
+  if (REV === "d") { const shape = [3, 8, 11, 9, 6, 5, 7, 10, 9, 6, 5, 6, 8, 9, 7, 4]; vals = shape.map(x => Math.round(today * x / 113));
+    const h = new Date().getHours(); active = Math.max(0, Math.min(15, h - 7)); labels = vals.map((_, k) => ""); total = today; top = ["07 AM", "12 PM", "06 PM", "10 PM"]; }
+  else { const d = revData(); vals = d.vals; labels = d.labels; active = vals.length - 1; total = vals.reduce((a, b) => a + b, 0); top = null; }
+  if (S.revActive !== undefined && S.revActive < vals.length) active = S.revActive;
+  const W = 340, H = 170, n = vals.length, left = 14, right = W - 14, base = 140, maxH = 92, mx = Math.max(...vals);
+  const step = (right - left) / n, bw = Math.max(4, Math.min(14, step * .42));
+  $("#revTotal").textContent = RM(total);
+  let g = "";
+  if (top) g += top.map((t, k) => `<text x="${left + 10 + k * (right - left - 20) / 3}" y="20" font-size="9.5" text-anchor="middle" fill="#1CB0F6" font-family="Nunito,Segoe UI,Arial" font-weight="600">${t}</text>`).join("");
+  vals.forEach((v, k) => { const h = Math.max(8, v / mx * maxH), x = left + k * step + (step - bw) / 2, on = k === active;
+    g += `<rect x="${x}" y="${base - h}" width="${on ? bw + 1 : bw}" height="${h}" rx="${bw / 2}" fill="${on ? "#58CC02" : "#D7FFB8"}" ${on ? 'filter="url(#gl)"' : ""} data-k="${k}"/>`;
+    if (labels[k]) g += `<text x="${x + bw / 2}" y="${base + 16}" font-size="9.5" text-anchor="middle" fill="#888" font-family="Nunito,Segoe UI,Arial">${labels[k]}</text>`; });
+  const ax = left + active * step + step / 2, ah = Math.max(8, vals[active] / mx * maxH), cy = Math.max(26, base - ah - 30), chipW = 74;
+  const cx = Math.max(left + chipW / 2, Math.min(right - chipW / 2, ax));
+  g += `<g><rect x="${cx - chipW / 2}" y="${cy}" width="${chipW}" height="22" rx="11" fill="#58CC02" stroke="#fff" stroke-width="2.5"/><text x="${cx}" y="${cy + 15}" font-size="11" text-anchor="middle" fill="#fff" font-family="Nunito,Segoe UI,Arial" font-weight="700">${RM(vals[active])}</text></g>`;
+  if (REV === "d") g += `<g font-size="8.5" fill="#999" font-family="Nunito,Segoe UI,Arial" letter-spacing=".6">${["OPEN", "RUSH", "LUNCH", "CLOSE"].map((t, k) => `<text x="${left + 14 + k * (right - left - 28) / 3}" y="${base + 20}" text-anchor="middle">${t}</text>`).join("")}</g>`;
+  $("#area").innerHTML = `<defs><filter id="gl" x="-50%" y="-20%" width="200%" height="140%"><feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#58CC02" flood-opacity=".4"/></filter></defs>${g}`;
+  $("#area").onpointerdown = ev => { const r = $("#area").getBoundingClientRect(), x = (ev.clientX - r.left) / r.width * W; const k = Math.max(0, Math.min(n - 1, Math.floor((x - left) / step))); S.revActive = k; areaChart(); };
+}
+function donut() {
+  const D = [["Beans", 6890, "#FF9600"], ["Milk", 5420, "#1CB0F6"], ["Cups & straws", 2310, "#58CC02"], ["Syrups", 1180, "#FFC800"], ["Cleaning", 610, "#CE82FF"], ["Equipment", 540, "#FF4B4B"]];
+  const tot = D.reduce((a, b) => a + b[1], 0), R = 50, C = 2 * Math.PI * R; let off = 0;
+  $("#donut").innerHTML = D.map(([n, v, c]) => { const len = v / tot * C, el = `<circle cx="64" cy="64" r="${R}" fill="none" stroke="${c}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${Math.max(1, len - 6)} ${C - Math.max(1, len - 6)}" stroke-dashoffset="${-off}" transform="rotate(-90 64 64)"/>`; off += len; return el; }).join("")
+    + `<text x="64" y="61" text-anchor="middle" font-family="Nunito,Segoe UI,Arial" font-weight="700" font-size="16" fill="#100F3E">RM ${(tot / 1000).toFixed(1)}k</text><text x="64" y="78" text-anchor="middle" font-family="Nunito" font-size="10" fill="#6b7b6b">this month</text>`;
+  $("#donutLegend").innerHTML = D.slice(0, 4).map(([n, v, c]) => `<div class="legend"><i style="background:${c}"></i>${n}<b>${Math.round(v / tot * 100)}%</b></div>`).join("");
+}
+function ring(svg, pct) { const R = 26, C = 2 * Math.PI * R; svg.innerHTML = `<circle cx="32" cy="32" r="${R}" fill="none" stroke="#F0F0F0" stroke-width="8"/><circle cx="32" cy="32" r="${R}" fill="none" stroke="#FFC800" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C * pct} ${C}" transform="rotate(-90 32 32)"/>`; }
+function miniBars(svg, vals) { const W = +svg.getAttribute("width"), H = +svg.getAttribute("height"), mx = Math.max(...vals), bw = W / vals.length - 4;
+  const w = Math.min(10, bw); svg.innerHTML = vals.map((v, i) => `<rect x="${i * (bw + 4) + (bw - w) / 2}" y="${H - Math.max(6, v / mx * H)}" width="${w}" height="${Math.max(6, v / mx * H)}" rx="${w / 2}" fill="${i === vals.length - 1 ? "#1CB0F6" : "#BDEBFF"}"/>`).join(""); }
+$("#revSeg").onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; REV = b.dataset.r; S.revActive = undefined; $$("#revSeg button").forEach(x => x.classList.toggle("on", x === b)); areaChart(); };
+
+/* ---------- home ---------- */
+const thumb = (p, s = 34) => `<img src="${p.img}" style="width:${s + 8}px;height:${s + 8}px;border-radius:12px;object-fit:cover">`;
+function renderHome() {
+  const days = last7(), today = days[6].v, cups = Math.round(today / PRICE_PER_CUP);
+  $("#kpis").innerHTML = `<div class="kcard dark"><div class="row"><span class="kl">Revenue today</span><span class="spacer"></span><span class="pill p-white">▲ 12%</span></div><div class="kv serif">${RM(today)}</div><svg id="spark" width="164" height="34"></svg></div>
+    <div class="kcard"><span class="kl">Cups sold</span><div class="row" style="align-items:baseline;gap:8px"><div class="kv serif" style="color:var(--ink)">${cups}</div><span class="delta">▲ 9%</span></div><svg id="cupBars" width="164" height="34"></svg></div>
+    <div class="kcard"><span class="kl">Gross margin</span><div class="row"><svg id="ring" width="64" height="64"></svg><div class="kv serif" style="color:var(--ink)">${Math.round((1 - COST_PER_CUP / PRICE_PER_CUP) * 100)}%</div></div></div>
+    <div class="kcard"><span class="kl">Cost per cup</span><div class="kv serif" style="color:var(--ink)">${RM(COST_PER_CUP)}</div><span class="pill p-orange">▲ RM 0.18 · beans</span></div>`;
+  spark($("#spark"), days.map(x => x.v)); miniBars($("#cupBars"), days.map(x => Math.round(x.v / PRICE_PER_CUP))); ring($("#ring"), 1 - COST_PER_CUP / PRICE_PER_CUP);
+  const h = new Date().getHours(); $("#hello").textContent = (h < 12 ? "Selamat pagi" : h < 19 ? "Selamat petang" : "Selamat malam") + ", " + (S.liveName || "Hafiz");
+  const po = draftPO(), milk = forecast(byId.milk), poReq = S.reqs.find(r => r.kind === "po"), bank = S.reqs.find(r => r.kind === "bank");
+  const done = poReq && poReq.status === "committed";
+  const INS = [
+    done ? { ic: "✅", c: "#DDF7DF", t: "Order approved 2 of 3", d: "Milk arrives 7:30 AM", b: "Track", go: "suppliers", sc: "mapCard" } : { ic: "🥛", c: "#fde7d6", t: `Milk runs out in ${milk.days.toFixed(1)} days`, d: `Draft ready · ${po.suppliers} suppliers · ${RM(po.total)}`, b: "Review", ask: "What should I order this week?" },
+    bank && bank.status === "pending" ? { ic: "🚩", c: "#fde0de", t: "Bank-change scam", d: "5 red flags · blocked", b: "See why", go: "approvals" } : { ic: "🛡️", c: "#DDF7DF", t: "Scam stopped", d: "RM 2,480 protected", b: "Details", go: "approvals" },
+    { ic: "📈", c: "#fff1c2", t: "Beans +14.7%", d: "Cost per cup +RM 0.18", b: "Options", ask: "Why is my cost per cup up?" },
+    { ic: "🧑‍🤝‍🧑", c: "#DDF7DF", t: "3 regulars slipping", d: "Mei · Siti · Jason", b: "Voucher", go: "crm" }];
+  $("#insights").innerHTML = INS.map((x, i) => `<div class="ins"><div class="ic" style="background:${x.c}">${x.ic}</div><div class="t">${x.t}</div><div class="d">${x.d}</div>
+    <button class="btn ${i === 1 && x.ic === "🚩" ? "btn-red" : "btn-green"} btn-sm" data-ins="${i}">${x.b}</button></div>`).join("");
+  $$("[data-ins]").forEach(b => b.onclick = () => { const x = INS[+b.dataset.ins]; if (x.ask) { go("biji"); setTimeout(() => ask(x.ask), 200); } else go(x.go, x.sc); });
+  areaChart(); donut(); renderBranchStrip(); $("#homeLogo").innerHTML = '<img src="img/logo.png" alt="KopiKita" style="height:32px;display:block">';
+  $("#lowList").innerHTML = P.map(p => ({ p, f: forecast(p) })).filter(x => x.f && x.f.days < 4).sort((a, b) => a.f.days - b.f.days).slice(0, 3).map(({ p, f }) => {
+    const col = f.days < 1.5 ? "#D63B3B" : f.days < 3 ? "#FF9600" : "#58A700";
+    return `<div class="item reveal"><div class="ico" style="background:var(--cream);overflow:hidden">${thumb(p)}</div><div class="meta"><div class="t">${p.name}</div>
+      <div class="bar" style="margin-top:7px"><i style="width:${Math.min(100, f.days / 7 * 100)}%;background:${col}"></i></div></div><span class="pill" style="background:${col}1a;color:${col}">${f.days.toFixed(1)} d</span></div>`; }).join("");
+  const pend = S.reqs.filter(r => r.status === "pending").length; $("#apBadge").textContent = pend; $("#apBadge").style.display = pend ? "" : "none";
+  $("#bellDot").textContent = Math.min(9, S.audit.length || 3);
+  paintWA(); observe();
+}
+const fmtQty = (q, p) => (q % 1 ? q.toFixed(1) : q) + " " + (p.u || "");
+
+/* ---------- shop ---------- */
+const CATS = ["All", "Beans", "Milk", "Cups", "Syrups", "Matcha"];
+$("#cats").innerHTML = CATS.map(c => `<button class="chip ${c === "All" ? "on" : ""}" data-c="${c}">${c}</button>`).join("");
+$("#cats").onclick = e => { const b = e.target.closest("[data-c]"); if (!b) return; S.cat = b.dataset.c; $$("#cats .chip").forEach(x => x.classList.toggle("on", x === b)); renderShop(); };
+$("#q").oninput = () => renderShop();
+function renderShop() {
+  $("#supStrip").innerHTML = Object.keys(SUP_IMG).map(k => `<div class="supl">${supAv(k, 60)}<span>${SUP[k].name.split(" ").slice(0, 2).join(" ")}</span></div>`).join("");
+  const q = $("#q").value.toLowerCase();
+  $("#grid").innerHTML = P.filter(p => (S.cat === "All" || p.cat === S.cat) && (!q || (p.name + p.cat + SUP[p.sup].name).toLowerCase().includes(q))).map(p => {
+    const n = S.cart[p.id] || 0;
+    return `<div class="prod"><div class="art">${p.img ? `<img src="${p.img}" alt="">` : art(p.art)}${p.tag ? `<span class="tag">${p.tag}</span>` : ""}</div><div class="n">${p.name}</div><div class="s">${SUP[p.sup].name} · ${p.unit}</div>
+      <div class="p">${RM(p.price)}</div><button class="add ${n ? "in" : ""}" data-add="${p.id}" aria-label="Add">${n ? n : "+"}</button></div>`; }).join("") || '<p class="muted">Nothing found.</p>';
+  renderCartbar();
+}
+$("#grid").onclick = e => { const b = e.target.closest("[data-add]"); if (!b) return; S.cart[b.dataset.add] = (S.cart[b.dataset.add] || 0) + 1; store.set("cart", S.cart); renderShop(); };
+function cartTotals() { const ids = Object.keys(S.cart).filter(k => S.cart[k] > 0); const total = ids.reduce((s, k) => s + byId[k].price * S.cart[k], 0);
+  return { ids, total: Math.round(total * 100) / 100, items: ids.reduce((s, k) => s + S.cart[k], 0), suppliers: new Set(ids.map(k => byId[k].sup)).size }; }
+function renderCartbar() { const t = cartTotals(); $("#cartbar").classList.toggle("show", t.items > 0 && $("#shop").classList.contains("active"));
+  $("#cbTotal").textContent = RM(t.total); $("#cbInfo").textContent = `${t.items} items · ${t.suppliers} supplier${t.suppliers > 1 ? "s" : ""} · 1 invoice`;
+  $("#cartDot").style.display = t.items ? "" : "none"; $("#cartDot").textContent = t.items; }
+$("#cbGo").onclick = $("#cartBtn").onclick = () => openCart();
+function openCart() {
+  const t = cartTotals(); if (!t.items) return toast("Your cart is empty");
+  const groups = {}; t.ids.forEach(k => (groups[byId[k].sup] = groups[byId[k].sup] || []).push(k));
+  const big = t.total > SMALL_LIMIT;
+  sheet(`<h2 class="serif" style="margin:0;color:var(--ink);font-size:28px">One order, ${t.suppliers} supplier${t.suppliers > 1 ? "s" : ""}</h2><p class="muted" style="margin:4px 0 12px">KopiKita splits it per supplier and sends you one invoice.</p>
+    ${Object.entries(groups).map(([s, ks]) => `<div class="card" style="padding:12px"><div class="row"><b style="color:var(--ink)">${SUP[s].name}</b><span class="spacer"></span><span class="pill p-gray">${SUP[s].next}</span></div>
+      ${ks.map(k => `<div class="row" style="margin-top:8px;font-size:13px"><span style="flex:1">${byId[k].name}</span><span class="qty"><button data-q="${k}" data-d="-1">−</button><b>${S.cart[k]}</b><button data-q="${k}" data-d="1">+</button></span><b style="width:70px;text-align:right">${RM(byId[k].price * S.cart[k])}</b></div>`).join("")}</div>`).join("")}
+    <div class="row" style="margin:6px 2px 12px"><b style="font-size:16px;color:var(--ink)">Total</b><span class="spacer"></span><b class="serif" style="font-size:26px;color:var(--ink)">${RM(t.total)}</b></div>
+    ${big ? `<div class="deny" style="margin-bottom:12px">🔐 Over ${RM(SMALL_LIMIT)}: needs <b>2 of 3</b> owners (TideCloak quorum) before any money moves.</div>` : `<div class="tcard" style="margin-bottom:12px">✅ Under ${RM(SMALL_LIMIT)}: your role <code>po-approve-small</code> can approve it.</div>`}
+    <button class="btn btn-green btn-block" id="placeBtn">${big ? "Send for 2-of-3 approval" : "Place order"}</button>
+    <button class="btn btn-ghost btn-block" id="clearCart">Clear cart</button>`);
+  $$("[data-q]").forEach(b => b.onclick = () => { const k = b.dataset.q; S.cart[k] = Math.max(0, (S.cart[k] || 0) + +b.dataset.d); if (!S.cart[k]) delete S.cart[k]; store.set("cart", S.cart); renderShop(); if (cartTotals().items) openCart(); else closeSheet(); });
+  $("#clearCart").onclick = () => { S.cart = {}; store.set("cart", S.cart); closeSheet(); renderShop(); };
+  $("#placeBtn").onclick = () => { closeSheet();
+    if (!big) { if (!hasRole("po-approve-small")) return toast("Your token lacks po-approve-small"); log({ kind: "po", title: "Order placed · " + RM(t.total), d: "approved with po-approve-small (under RM 500)" }); S.cart = {}; store.set("cart", S.cart); confetti(); toast("Order sent to suppliers (simulated)"); renderShop(); return; }
+    createPO(t.total, t.suppliers, "Cart order"); S.cart = {}; store.set("cart", S.cart); go("approvals"); };
+}
+
+/* ---------- approvals (TideCloak quorum) ---------- */
+function createPO(total, suppliers, by) {
+  const existing = S.reqs.find(r => r.kind === "po" && r.status === "pending"); if (existing) { toast("Already waiting for approval"); return existing; }
+  const n = 1042 + S.reqs.filter(r => r.kind === "po").length;
+  const r = { id: "PO-" + n, kind: "po", title: `Purchase order PO-${n}`, amount: total, by: by + " · " + suppliers + " suppliers", needs: "po-approve-large", ok: [], no: [], status: "pending" };
+  S.reqs.unshift(r); saveReqs(); log({ kind: "quorum", title: `${r.id} needs 2 of 3`, d: `${RM(total)} · change request: grant po-approve-large to Hafiz` }); toast("Sent to Aisyah, Kumar and Wei Ling"); return r;
+}
+function renderApprovals() {
+  const all = ["cafe-staff", "po-approve-small", "po-approve-large", "supplier-bank-edit", "_tide_supplierbank.selfdecrypt"];
+  $("#roles").innerHTML = all.map(r => { const h = hasRole(r); return `<span class="role ${h ? "has" : "no"}">${h ? "✅" : "🔒"} ${r}</span>`; }).join("");
+  $("#tokenSrc").textContent = S.mode === "live" ? "live TideCloak token" : "simulated token";
+  $("#reqList").innerHTML = S.reqs.map(reqCard).join("") || '<p class="muted">No pending approvals.</p>';
+  $$("[data-ok]").forEach(b => b.onclick = () => vote(b.dataset.req, b.dataset.ok, true));
+  $$("[data-no]").forEach(b => b.onclick = () => vote(b.dataset.req, b.dataset.no, false));
+  renderHome();
+}
+function reqCard(r) {
+  const n = r.ok.length, done = r.status !== "pending", risk = r.kind === "bank" ? scamCheck(SCAM) : null;
+  const status = r.status === "committed" ? '<span class="pill p-green">COMMITTED</span>' : r.status === "rejected" ? '<span class="pill p-red">REJECTED</span>' : '<span class="pill p-gold">PENDING</span>';
+  return `<div class="req ${risk ? "risk" : ""}">
+    <div class="row"><b style="font-size:16px">${r.title}</b><span class="spacer"></span>${status}</div>
+    <div style="font-size:12.5px;opacity:.7;margin-top:2px">${esc(r.by)}</div>
+    <div class="row" style="margin-top:10px;flex-wrap:wrap;row-gap:6px"><span class="serif" style="font-size:30px;white-space:nowrap">${RM(r.amount)}</span><span class="spacer"></span><span class="pill p-white">needs ${r.needs}</span></div>
+    ${risk ? `<div style="background:rgba(214,59,59,.25);border-radius:14px;padding:10px 12px;margin-top:10px;font-size:12.5px"><b>🚩 Biji risk check: ${risk.risk}</b><br>${risk.flags.map(f => "• " + f).join("<br>")}<br><span style="opacity:.75">Tip: call the supplier on the number already on file.</span></div>` : ""}
+    <div class="row" style="margin:12px 0 6px;font-size:12.5px"><span style="opacity:.75">Approvals</span><span class="spacer"></span><b>${Math.min(n, QUORUM)} / ${QUORUM}</b></div>
+    <div class="bar"><i style="width:${Math.min(1, n / QUORUM) * 100}%;background:${r.status === "rejected" ? "#D63B3B" : "#F2B705"}"></i></div>
+    ${ADMINS.map(a => { const ok = r.ok.includes(a.id), no = r.no.includes(a.id);
+      return `<div class="admin"><div class="av" style="background:${a.c};width:34px;height:34px">${a.name[0]}</div><div style="flex:1"><div class="n">${a.name}</div><div class="r">${a.role}</div></div>
+      ${ok ? '<span class="pill p-green">approved</span>' : no ? '<span class="pill p-red">rejected</span>' : done || S.mode === "live" ? '<span class="pill p-white">—</span>'
+        : `<button class="btn btn-sm" style="background:rgba(255,255,255,.14);color:#fff;height:32px;padding:0 12px" data-no="${a.id}" data-req="${r.id}">✕</button><button class="btn btn-orange btn-sm" style="height:32px;padding:0 12px" data-ok="${a.id}" data-req="${r.id}">Approve <span class="sim" style="background:rgba(255,255,255,.25);color:#fff">sim</span></button>`}</div>`; }).join("")}
+    ${r.status === "committed" && r.kind === "po" ? `<div style="margin-top:12px;font-size:13px;background:rgba(255,255,255,.1);border-radius:14px;padding:10px">✅ TideCloak committed <code>po-approve-large</code> for this order → ${r.id} sent to suppliers <span class="sim">simulated</span> → authority revoked after use.</div>` : ""}
+    ${r.status === "rejected" && r.kind === "bank" ? `<div style="margin-top:12px;font-size:13px;background:rgba(255,255,255,.1);border-radius:14px;padding:10px">🛡️ Scam stopped. ${RM(r.amount)} stays safe. Bank details on file were never changed.</div>` : ""}
+    ${S.mode === "live" && !done ? `<div style="margin-top:10px;font-size:12px;opacity:.75">Live mode: owners approve this change request in the TideCloak admin console, then tap Refresh token.</div>` : ""}
+  </div>`;
+}
+function vote(id, who, yes) {
+  const r = S.reqs.find(x => x.id === id); if (!r || r.status !== "pending") return;
+  const a = ADMINS.find(x => x.id === who);
+  if (yes) { r.ok.push(who); log({ kind: "quorum", title: `${a.name} approved ${r.id}`, d: `${r.ok.length} of ${QUORUM}` }); }
+  else { r.no.push(who); log({ kind: "quorum", title: `${a.name} rejected ${r.id}`, d: r.kind === "bank" ? "called supplier on file number: no change, it's a scam" : "rejected" }); }
+  if (r.ok.length >= QUORUM) { r.status = "committed"; log({ kind: "po", title: `${r.id} approved & sent`, d: `quorum reached · ${RM(r.amount)} · authority revoked after use` }); confetti(); toast("2 of 3 reached: order sent (simulated)"); }
+  else if (r.no.length >= 2 || (r.kind === "bank" && !yes)) { r.status = "rejected"; log({ kind: "fraud", title: "Bank change rejected", d: `${RM(r.amount)} protected from invoice-redirection scam` }); toast("Rejected: scam stopped"); }
+  saveReqs(); renderApprovals();
+}
+$("#refreshToken").onclick = async () => { if (S.mode === "live" && S.iam) { try { await S.iam.updateIAMToken(); toast("Token refreshed from TideCloak"); } catch (e) { toast("Refresh failed: " + e.message); } } else toast("Simulated token refreshed"); renderApprovals(); };
+
+/* ---------- Biji chat ---------- */
+const chatLog = $("#chatLog");
+function me(t) { chatLog.insertAdjacentHTML("beforeend", `<div class="msg me">${esc(t)}</div>`); chatLog.scrollTop = 1e9; }
+function bot(html, mood = "happy") { chatLog.insertAdjacentHTML("beforeend", `<div class="botrow"><span style="flex-shrink:0">${biji(mood, 38)}</span><div class="msg bot">${html}</div></div>`); chatLog.scrollTop = 1e9; }
+async function think(ms = 700) { chatLog.insertAdjacentHTML("beforeend", `<div class="botrow" id="typing"><span>${biji("happy", 38)}</span><div class="msg bot"><span class="typing"><i></i><i></i><i></i></span></div></div>`); chatLog.scrollTop = 1e9;
+  await new Promise(r => setTimeout(r, ms)); const t = $("#typing"); if (t) t.remove(); }
+const MS = t => /\b(apa|nak|minggu|pelanggan|bayar|akaun|tolong|boleh|berapa|ni|kenapa|kos)\b/i.test(t);
+function poTable(po, malay) {
+  const groups = {}; po.lines.forEach(x => (groups[x.p.sup] = groups[x.p.sup] || []).push(x));
+  return `<div class="tcard"><table>${Object.entries(groups).map(([s, xs]) => `<tr><td colspan="2" style="font-weight:800;color:var(--ink);padding-top:8px">${SUP[s].name}</td></tr>` +
+    xs.map(({ p, f }) => `<tr><td>${fmtQty(f.qty, p)} ${p.name} <span style="color:#b44f08">(${f.days.toFixed(1)}d left)</span></td><td>${RM(f.cost)}</td></tr>`).join("")).join("")}
+    <tr><td style="font-weight:800;padding-top:8px">${malay ? "Jumlah" : "Total"} · ${po.suppliers} ${malay ? "pembekal" : "suppliers"}</td><td style="font-size:15px">${RM(po.total)}</td></tr></table>
+    <button class="btn btn-green btn-sm" style="margin-top:10px;width:100%" data-po="1">${malay ? "Hantar untuk kelulusan 2 daripada 3" : "Send for 2-of-3 approval"}</button></div>`;
+}
+async function ask(text) {
+  text = text.trim(); if (!text) return; me(text); $("#chatInput").value = ""; await think();
+  const ms = MS(text), po = draftPO();
+  if (/pay|bayar|transfer|pindah/i.test(text)) {
+    log({ kind: "deny", title: "Biji refused a payment", d: "AI holds no payment authority; bank change needs 2 of 3" });
+    return bot((ms ? "Saya tak boleh bayar. " : "I can't move money. ") + `Paying a <b>new</b> account needs <code>supplier-bank-edit</code>, which only a 2-of-3 TideCloak quorum can grant.<div class="deny">🔒 <b>Denied.</b> Biji has no payment role, and neither does one person alone.</div>`, "alert"); }
+  if (/order|reorder|stock|restock|beli|minggu|week|need/i.test(text)) {
+    log({ kind: "ai", title: "Biji drafted an order", d: `${po.lines.length} items · ${po.suppliers} suppliers · ${RM(po.total)}` });
+    const milk = forecast(byId.milk);
+    return bot((ms ? `Susu segar habis dalam <b>${milk.days.toFixed(1)} hari</b>. Ini draf pesanan untuk minggu ini, ikut jualan 7 hari lepas:` : `Fresh milk runs out in <b>${milk.days.toFixed(1)} days</b>. Here's one draft order for the week, based on the last 7 days of sales:`) + poTable(po, ms)
+      + `<div class="muted" style="margin-top:6px">${ms ? "Saya cuma boleh sediakan draf. Manusia yang luluskan." : "I can only draft. Humans approve the money."}</div>`); }
+  if (/cost|kos|margin|price|harga|naik|why/i.test(text)) {
+    log({ kind: "ai", title: "Biji explained cost per cup", d: "bean price +14.7% in 7 weeks" });
+    return bot(`Your House Blend price went from <b>RM 68 → RM 78/kg</b> in 7 weeks (+14.7%). At 18 g a cup, that's <b>+RM 0.18 per cup</b>.<div class="tcard"><svg width="100%" viewBox="0 0 240 60" id="pchart"></svg>
+      <b>Two options:</b><br>• Lock RM 76/kg for 3 months (offer in your sealed price agreement)<br>• Blend 20% Malaysian Liberica (RM 38/kg): <b>−RM 0.14 per cup</b></div>`);
+  }
+  if (/remind|ingat|follow up|supplier/i.test(text) && !/message|mesej|check/i.test(text)) {
+    log({ kind: "ai", title: "Biji prepared supplier reminders", d: "4 WhatsApp messages ready" });
+    return bot(`4 reminders ready:<div class="tcard">${REM.map((r, i) => `<div class="row" style="margin:6px 0"><span style="flex:1"><b>${SUP[r.s].name}</b><br><span class="muted">${r.t}</span></span><button class="btn btn-wa btn-sm" style="height:32px;padding:0 10px" data-warem="${i}">${WA(16)}Send</button></div>`).join("")}</div>`); }
+  if (/customer|regular|pelanggan|slipping|loyal|churn/i.test(text)) {
+    const c = churn(); log({ kind: "ai", title: "Biji flagged regulars at risk", d: c.map(x => x.name).join(", ") });
+    return bot(`${c.length} regulars are slipping away:<div class="tcard"><table>${c.map(x => `<tr><td>${x.name} · ${x.drink}</td><td>${x.last} days</td></tr>`).join("")}</table></div>Want me to prepare a "Kopi on us" voucher? <button class="btn btn-orange btn-sm" style="margin-top:8px" data-go="crm">Open customers</button>`);
+  }
+  if (/message|mesej|whatsapp|scam|check|bank|akaun/i.test(text)) {
+    const r = scamCheck(SCAM); log({ kind: "fraud", title: "Biji flagged a bank-change message", d: r.flags.length + " red flags" });
+    return bot(`🚩 <b>High risk.</b> The message from "${SCAM.from}" has ${r.flags.length} red flags:<div class="deny">${r.flags.map(f => "• " + f).join("<br>")}</div>Changing a supplier's bank account needs <b>2 of 3 owners</b> in TideCloak. I've put it in Approvals instead of paying. <button class="btn btn-red btn-sm" style="margin-top:8px" data-go="approvals">Open approvals</button>`, "alert");
+  }
+  bot(ms ? "Boleh tanya saya: apa nak order, kenapa kos naik, pelanggan mana yang hilang, atau semak mesej pembekal." : "Ask me what to order, why your cost per cup went up, which regulars are slipping away, or to check supplier messages.");
+}
+chatLog.addEventListener("click", e => { const wr = e.target.closest("[data-warem]"); if (wr) { const r = REM[+wr.dataset.warem]; waSend(r.msg, SUP[r.s].name); wr.innerHTML = WA(16) + "Sent ✓"; return; } if (e.target.closest("[data-po]")) { const po = draftPO(); createPO(po.total, po.suppliers, "Drafted by Biji (AI)"); go("approvals"); } });
+$("#composer").onsubmit = e => { e.preventDefault(); ask($("#chatInput").value); };
+const SUGGEST = [["📦 What should I order this week?", "What should I order this week?"], ["🇲🇾 Apa nak order minggu ni?", "Apa nak order minggu ni?"],
+  ["🚩 Check supplier messages", "Check supplier messages"], ["💬 Remind my suppliers", "Remind my suppliers"], ["💸 Pay Bukit Roastery's new account", "Pay Bukit Roastery's new account now"],
+  ["📈 Why is my cost per cup up?", "Why is my cost per cup up?"], ["🧑‍🤝‍🧑 Which regulars are slipping away?", "Which regulars are slipping away?"]];
+$("#suggest").innerHTML = SUGGEST.map(([l, t]) => `<button data-t="${esc(t)}">${l}</button>`).join("");
+$("#suggest").onclick = e => { const b = e.target.closest("button"); if (b) ask(b.dataset.t); };
+function greet() { bot("Hai! I'm <b>Biji</b> 🫘. I watch your stock, prices, suppliers and regulars. I can <b>draft</b> orders, but <b>only humans approve money</b>."); }
+greet();
+new MutationObserver(() => { const c = $("#pchart"); if (c && !c.dataset.done) { c.dataset.done = 1; const v = [68, 68, 70, 72, 74, 76, 78];
+  c.innerHTML = v.map((x, i) => `<rect x="${8 + i * 33}" y="${55 - (x - 60) * 2.4}" width="22" height="${(x - 60) * 2.4}" rx="6" fill="${i === 6 ? "#FF9600" : "#100F3E"}" opacity="${i === 6 ? 1 : .8}"/>`).join("")
+  + `<text x="238" y="10" font-size="9" text-anchor="end" fill="#6b7b6b" font-family="Nunito">RM/kg, last 7 weeks</text>`; } }).observe(chatLog, { childList: true, subtree: true });
+
+/* ---------- branches (multi-branch tracking + AI stock balancing) ---------- */
+const BRANCHES = [
+  { id: "sunway", name: "Sunway", state: "Selangor", district: "Petaling", rev: 2310, margin: 81, stock: 38, alert: "Milk 1.2 d", c: "#58CC02", xy: [585, 640] },
+  { id: "ss15", name: "Subang SS15", state: "Selangor", district: "Petaling", rev: 1870, margin: 80, stock: 64, alert: "All good", c: "#1CB0F6", xy: [300, 470] },
+  { id: "seremban", name: "Seremban", state: "Negeri Sembilan", rev: 1640, margin: 78, stock: 92, alert: "Milk surplus", c: "#FF9600" },
+  { id: "melaka", name: "Melaka", state: "Melaka", rev: 1980, margin: 79, stock: 71, alert: "Cups 3 d", c: "#CE82FF" }];
+// Each level shows a real map; hotspots are in source-image pixels; crop = visible part of the image.
+const GEO = {
+  my: { name: "🇲🇾 Malaysia", img: "img/map_malaysia.jpg", W: 1080, H: 580, crop: [95, 85, 490, 535], badges: true, hot: [
+    { label: "Selangor", n: 2, x: 222, y: 338, go: "sel" },
+    { label: "Negeri Sembilan", n: 1, x: 305, y: 392, br: "seremban" },
+    { label: "Melaka", n: 1, x: 297, y: 440, br: "melaka" }] },
+  sel: { name: "Selangor", img: "img/map_selangor.png", W: 838, H: 892, crop: [150, 250, 838, 892], hot: [
+    { label: "Petaling · Bandar Sunway", n: 2, x: 583, y: 533, bx: 330, by: 470, go: "sw" }] },
+  sw: { name: "Bandar Sunway", img: "img/map_sunway_blur.jpg", W: 1270, H: 979, crop: [0, 120, 1270, 979], pins: true }
+};
+let GL = "my";
+function renderBranchStrip() {
+  $("#brStrip").innerHTML = BRANCHES.map(b => `<div class="brc"><div class="row"><span class="n">${b.name}</span><span class="spacer"></span><span class="pill ${b.stock < 50 ? "p-orange" : "p-green"}">${b.stock}%</span></div>
+    <div class="v">${RM(b.rev)}</div><div class="muted" style="font-size:12px">${b.state} · ${b.alert}</div><div class="bar" style="margin-top:8px"><i style="width:${b.stock}%;background:${b.stock < 50 ? "#FF9600" : "#58CC02"}"></i></div></div>`).join("");
+}
+function geoLevel(k) { GL = k; renderBranches(); }
+function renderBranches() {
+  const L = GEO[GL], [cx0, cy0, cx1, cy1] = L.crop, cw = cx1 - cx0, ch = cy1 - cy0, px = x => ((x - cx0) / cw * 100).toFixed(2) + "%", py = y => ((y - cy0) / ch * 100).toFixed(2) + "%";
+  const path = GL === "my" ? ["my"] : GL === "sel" ? ["my", "sel"] : ["my", "sel", "sw"];
+  $("#crumbs").innerHTML = path.map((k, i) => `<button class="crumb ${k === GL ? "on" : ""}" data-geo="${k}">${GEO[k].name}</button>${i < path.length - 1 ? '<span class="sep">›</span>' : ""}`).join("");
+  let inner = `<img src="${L.img}" alt="${L.name} map" style="position:absolute;width:${(L.W / cw * 100).toFixed(2)}%;left:${(-cx0 / cw * 100).toFixed(2)}%;top:${(-cy0 / ch * 100).toFixed(2)}%">`;
+  if (L.badges) {
+    inner += L.hot.map((h, i) => `<button class="hotb" style="left:${px(h.x)};top:${py(h.y)}" data-hot="${i}" aria-label="${h.label}: ${h.n} branch${h.n > 1 ? "es" : ""}">${h.n}</button>`).join("");
+  } else if (L.hot) {
+    inner += `<svg viewBox="0 0 ${cw} ${ch}" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%">${L.hot.map(h => `<path d="M${h.bx - cx0},${h.by - cy0} L${h.x - cx0},${h.y - cy0}" stroke="#100F3E" stroke-width="${cw / 260}" stroke-dasharray="${cw / 120} ${cw / 160}" fill="none"/><circle cx="${h.x - cx0}" cy="${h.y - cy0}" r="${cw / 70}" fill="#FF4B4B" stroke="#fff" stroke-width="${cw / 260}"/>`).join("")}</svg>`;
+    inner += L.hot.map((h, i) => `<button class="hot" style="left:${px(h.bx)};top:${py(h.by)}" data-hot="${i}"><b>${h.n}</b><span>${h.label}</span></button>`).join("");
+  } else {
+    inner += BRANCHES.filter(b => b.xy).map(b => `<div class="gpin" style="left:${px(b.xy[0])};top:${py(b.xy[1])}"><div class="lab">☕ ${b.name} · ${RM(b.rev)}</div><div class="dotc" style="background:${b.c}">☕</div></div>`).join("");
+    inner += [[520, 600], [640, 700], [700, 610], [540, 700], [240, 520], [360, 540], [380, 420]].map(([x, y]) => `<i class="cust" style="left:${px(x)};top:${py(y)}"></i>`).join("");
+    inner += `<svg viewBox="0 0 ${cw} ${ch}" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"><path d="${VANS[0].path.replace(/(-?\d+),(-?\d+)/g, (m, a, b) => `${a},${b - cy0}`)}" stroke="#FF9600" stroke-width="7" stroke-dasharray="16 12" fill="none"/></svg>`;
+    inner += `<div class="gtruck"><span>🚚</span>🥛 +25 min</div>`;
+  }
+  $("#geo").innerHTML = `<div class="geo-in" style="aspect-ratio:${cw}/${ch};--ar:${(cw / ch).toFixed(3)}">${inner}</div><div class="attr">${GL === "sw" ? "Imagery © Google · business names blurred" : GL === "my" ? "Tap a green number" : "Tap the highlighted area"}</div>`;
+  $$("[data-geo]").forEach(b => b.onclick = () => geoLevel(b.dataset.geo));
+  $$("[data-hot]").forEach(b => b.onclick = () => { const h = L.hot[+b.dataset.hot]; if (h.go) geoLevel(h.go); else { const br = BRANCHES.find(x => x.id === h.br); toast(`☕ ${br.name}: ${RM(br.rev)} today · stock ${br.stock}%`); } });
+  const list = GL === "my" ? [["Selangor", BRANCHES.filter(b => b.state === "Selangor")], ["Negeri Sembilan", BRANCHES.filter(b => b.state === "Negeri Sembilan")], ["Melaka", BRANCHES.filter(b => b.state === "Melaka")]]
+    : GL === "sel" ? [["Petaling", BRANCHES.filter(b => b.district === "Petaling")]] : null;
+  $("#geoList").innerHTML = list ? list.map(([n, bs]) => `<div class="item" data-drill="${n === "Selangor" ? "sel" : n === "Petaling" ? "sw" : ""}" style="cursor:pointer"><div class="ico" style="background:#E9FCD8">📍</div><div class="meta"><div class="t">${n}</div><div class="d">${bs.length} branch${bs.length > 1 ? "es" : ""} · ${RM(bs.reduce((a, b) => a + b.rev, 0))} today</div></div><span class="pill ${bs.some(b => b.stock < 50) ? "p-orange" : "p-green"}">${bs.some(b => b.stock < 50) ? "check" : "ok"}</span></div>`).join("")
+    : BRANCHES.filter(b => b.xy).map(b => `<div class="item"><div class="av" style="background:${b.c}">☕</div><div class="meta"><div class="t">${b.name}</div><div class="d">Margin ${b.margin}% · ${b.alert}</div><div class="bar" style="margin-top:6px"><i style="width:${b.stock}%;background:${b.stock < 50 ? "#FF9600" : "#58CC02"}"></i></div></div><span class="pill ${b.stock < 50 ? "p-orange" : "p-green"}">${b.stock}%</span></div>`).join("");
+  $$("[data-drill]").forEach(el => el.onclick = () => { if (el.dataset.drill) geoLevel(el.dataset.drill); else { const br = BRANCHES.find(b => b.state === el.querySelector(".t").textContent); if (br) toast(`☕ ${br.name}: ${RM(br.rev)} today · stock ${br.stock}%`); } });
+  $("#m-br").innerHTML = biji("happy", 46);
+  const mx = Math.max(...BRANCHES.map(b => b.rev));
+  $("#brBars").innerHTML = BRANCHES.map((b, i) => `<text x="0" y="${24 + i * 36}" font-size="12" font-family="Nunito" font-weight="800" fill="#4B4B4B">${b.name}</text>
+    <rect x="92" y="${14 + i * 36}" width="170" height="12" rx="6" fill="#F0F0F0"/><rect x="92" y="${14 + i * 36}" width="${(b.rev / mx) * 170}" height="12" rx="6" fill="${b.c}"/><text x="${100 + (b.rev / mx) * 170}" y="${25 + i * 36}" font-size="12" font-family="Nunito" font-weight="900" fill="#4B4B4B">${RM(b.rev)}</text>`).join("");
+}
+$("#xferBtn").onclick = () => { log({ kind: "ai", title: "Stock transfer · Seremban → Sunway", d: "12 L milk · saves a rush order (simulated)" }); toast("Transfer booked (simulated) ✓"); BRANCHES[0].stock = 61; BRANCHES[0].alert = "Milk 2.1 d"; BRANCHES[2].stock = 74; renderBranches(); };
+
+/* ---------- suppliers, reminders, real map ---------- */
+const CAFE = [585, 640];
+const VANS = [{ sup: "lembah", item: "72 L fresh milk", ic: "🥛", eta: "31 min", late: "+25 min", path: "M618,-30 L616,300 L612,560 C606,600 598,622 590,634", dur: 16 },
+              { sup: "pakmat", item: "1,150 kraft cups", ic: "🥤", eta: "18 min", path: "M1290,330 C1100,420 905,520 800,585 C700,615 640,630 594,640", dur: 22 }];
+const REM = [{ s: "lembah", t: "Confirm 72 L milk · tomorrow 7:30 AM", msg: "Hi Lembah Dairy, Anjung Sunway here. Please confirm 72 L fresh milk for tomorrow 7:30 AM. Terima kasih!" },
+  { s: "pakmat", t: "Invoice INV-2193 due Monday", msg: "Hi Pak Mat Packaging, noted invoice INV-2193 (RM 336) due Monday. Payment goes to the account on file. Thanks!" },
+  { s: "bukit", t: "Roast date for Saturday's beans?", msg: "Hi Bukit Roastery, can you confirm the roast date for Saturday's 8 kg House Blend? Thanks boss!" },
+  { s: "barista", t: "Grinder burrs: replace soon", msg: "Hi Selangor Barista Supply, we need a 64 mm burr set. Can you send a quote? Thanks!" }];
+const MAP = { s: .6, x: 0, y: 0 };
+function buildMap() {
+  const box = $("#rmapIn"); if (box.dataset.b) return; box.dataset.b = 1;
+  box.innerHTML = `<img class="base" src="img/map_sunway_blur.jpg" alt="Satellite map of Bandar Sunway (business labels blurred)">
+    <svg width="1270" height="979" style="position:absolute;left:0;top:0">${VANS.map(v => `<path d="${v.path}" fill="none" stroke="#FF9600" stroke-width="5" stroke-dasharray="12 10" stroke-linecap="round" opacity=".95"/>`).join("")}</svg>
+    <div class="pin" style="left:${CAFE[0]}px;top:${CAFE[1]}px"><div class="lab">☕ Your café · Anjung Sunway</div><div class="dotc">☕</div></div>
+    ${VANS.map(v => `<div class="van" style="offset-path:path('${v.path}');animation-duration:${v.dur}s"><div class="vb"><span>🚚</span>${v.ic} ${v.eta}</div></div>`).join("")}`;
+  const el = $("#rmap"); let drag = null;
+  el.onpointerdown = e => { drag = { x: e.clientX, y: e.clientY, mx: MAP.x, my: MAP.y }; el.setPointerCapture(e.pointerId); el.style.cursor = "grabbing"; };
+  el.onpointermove = e => { if (!drag) return; MAP.x = drag.mx + e.clientX - drag.x; MAP.y = drag.my + e.clientY - drag.y; mapApply(); };
+  el.onpointerup = el.onpointercancel = () => { drag = null; el.style.cursor = "grab"; };
+  const zoom = f => { const r = el.getBoundingClientRect(), cx = r.width / 2, cy = r.height / 2, ix = (cx - MAP.x) / MAP.s, iy = (cy - MAP.y) / MAP.s;
+    MAP.s = Math.max(.32, Math.min(1.6, MAP.s * f)); MAP.x = cx - ix * MAP.s; MAP.y = cy - iy * MAP.s; mapApply(); };
+  $("#zin").onclick = e => { e.stopPropagation(); zoom(1.3); }; $("#zout").onclick = e => { e.stopPropagation(); zoom(1 / 1.3); };
+  $("#zin").onpointerdown = $("#zout").onpointerdown = e => e.stopPropagation();
+}
+function mapApply() { const el = $("#rmap"), W = 1270 * MAP.s, H = 979 * MAP.s, w = el.clientWidth || 354, h = el.clientHeight || 310;
+  MAP.x = Math.min(0, Math.max(w - W, MAP.x)); MAP.y = Math.min(0, Math.max(h - H, MAP.y));
+  $("#rmapIn").style.transform = `translate(${MAP.x}px,${MAP.y}px) scale(${MAP.s})`; $("#rmapIn").style.setProperty("--k", (1 / MAP.s).toFixed(3)); }
+function mapCenter(px, py) { const el = $("#rmap"); MAP.x = (el.clientWidth || 354) / 2 - px * MAP.s; MAP.y = (el.clientHeight || 310) / 2 - py * MAP.s; mapApply(); }
+function renderSuppliers() {
+  buildMap(); setTimeout(() => { if (!MAP.init) { MAP.init = 1; MAP.s = Math.max(.6, ($("#rmap").clientWidth || 354) / 1270); mapCenter(CAFE[0] - 60, CAFE[1] - 10); } }, 30);
+  $("#etas").innerHTML = VANS.map(v => `<div class="eta"><div class="av" style="background:${SUP[v.sup].color}">🚚</div><div style="min-width:0"><div style="font-weight:800;color:var(--ink);font-size:13.5px">${v.ic} ${v.item}</div><div class="muted" style="font-size:12px">${SUP[v.sup].name} · ETA <b style="color:var(--orange)">${v.eta}</b></div>${v.late ? `<span class="pill p-red" style="margin-top:4px">${v.late} late</span>` : ""}</div></div>`).join("")
+    + `<div class="eta" style="border-color:#A5ED6E!important;background:#F2FFE6"><div class="av" style="background:#58CC02">🫘</div><div style="min-width:0"><div style="font-weight:900;color:var(--ink);font-size:13.5px">Next step</div><div class="muted" style="font-size:12px">Move 12 L milk from Seremban</div><button class="btn btn-green btn-sm" style="height:30px;margin-top:6px;padding:0 12px" data-go="branches">See plan</button></div></div>`;
+  const sent = store.get("sent", {});
+  $("#reminders").innerHTML = REM.map((r, i) => `<div class="item">${supAv(r.s)}<div class="meta"><div class="t">${SUP[r.s].name}</div><div class="d">${r.t}</div></div>
+    <button class="btn btn-wa btn-sm" data-rem="${i}" style="padding:0 12px">${WA(18)}${sent[i] ? "Sent ✓" : "Send"}</button></div>`).join("");
+  $$("[data-rem]").forEach(b => b.onclick = () => { const s = store.get("sent", {}); s[b.dataset.rem] = 1; store.set("sent", s); const r = REM[+b.dataset.rem]; waSend(r.msg, SUP[r.s].name); renderSuppliers(); });
+  const risk = scamCheck(SCAM);
+  $("#waList").innerHTML = `<div class="wb"><div class="who" style="color:#1CA0C8">Lembah Dairy ✔</div>Morning boss! 7:30am delivery confirmed, 72 L ready 👍<div class="meta">08:12</div></div>
+    <div class="wb out">Terima kasih! See you tomorrow.<div class="meta">08:14 ✓✓</div></div>
+    <div class="wb"><div class="who" style="color:#FF9600">Pak Mat Packaging ✔</div>INV-2193 RM 336 due Monday. Terima kasih!<div class="meta">10:40</div></div>
+    <div class="wb flag"><div class="who" style="color:#B02A2A">${SCAM.from} · ${SCAM.num}</div>${esc(SCAM.text)}<div class="meta">11:02</div>
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><span class="pill p-red">🚩 ${risk.risk} risk · ${risk.flags.length} flags</span><button class="btn btn-red btn-sm" style="height:30px" data-go="approvals">Why blocked</button></div></div>`;
+  $("#supList").innerHTML = Object.entries(SUP).map(([k, x]) => `<div class="item">${supAv(k)}<div class="meta"><div class="t">${x.name}</div><div class="d">${x.cat} · ${x.area}</div></div><span class="pill p-green">${x.rating}%</span></div>`).join("");
+  renderAgent(); renderRoasters();
+  paintWA();
+}
+/* Smart sourcing agent: nearest supplier first; if it is late or out of stock, Biji asks the next nearest on WhatsApp.
+   Small top-ups (< RM 500) switch automatically; bigger orders or new bank details still need 2 of 3 owners. */
+const AGENT = [{ n: "Lembah Dairy", km: 3.1 }, { n: "Sri Murni Dairy", km: 4.6 }, { n: "Ladang Segar", km: 7.9 }];
+function renderAgent() {
+  const asked = store.get("agentAsked", false);
+  const pill = i => i === 0 ? '<span class="pill p-red">+25 min<span class="lw"> late</span></span>'
+    : i === 1 ? (asked ? '<span class="pill p-green">✓ 9:40 AM <span class="sim" style="margin-left:2px">sim</span></span>' : '<span class="pill p-green">in stock</span>')
+    : '<span class="pill p-gray">backup</span>';
+  $("#agentCard").innerHTML = `<div class="row" style="gap:10px">${biji(asked ? "proud" : "alert", 46)}<div style="flex:1;min-width:0"><b style="color:var(--ink);font-size:16px">Smart sourcing</b><div class="muted" style="font-size:12.5px">🥛 Top-up 24 L milk · RM 173 · before 10 AM</div></div></div>
+    <div class="agl">${AGENT.map((a, i) => `<div class="agr${i === 0 ? " late" : ""}${i === 1 && asked ? " won" : ""}"><span class="rk">${i + 1}</span><b>${a.n}</b><span class="km">${a.km} km</span>${pill(i)}</div>`).join("")}</div>
+    <button class="btn btn-wa btn-block btn-sm" id="agentBtn">${WA(18)} ${asked ? "Sent to Sri Murni Dairy ✓" : "Ask next nearest on WhatsApp"}</button>
+    <div class="agrule">🔐 Under RM 500 Biji switches by itself · over RM 500 or new bank details → 2 of 3 owners</div>`;
+  $("#agentBtn").onclick = () => { store.set("agentAsked", true);
+    waSend("Hi Sri Murni Dairy! Boleh hantar 24 L susu segar ke Kedai Kopi Anjung, Sunway sebelum 10 pagi? / Can you deliver 24 L fresh milk before 10 AM? Terima kasih! — KopiKita", "Sri Murni Dairy");
+    renderAgent(); paintWA(); };
+}
+const ROASTERS = [{ n: "Drum", img: "img/r_drum.png" }, { n: "Brewsmith", img: "img/r_brewsmith.png" }, { n: "Cottle Coffee", img: "img/r_cottle.png" }];
+function renderRoasters() {
+  const inv = store.get("invited", {});
+  $("#roasters").innerHTML = ROASTERS.map((r, i) => `<div class="rcard"><div class="rlogo"><img src="${r.img}" alt="${r.n} logo"></div><b>${r.n}</b><span>Klang Valley</span>
+    <button class="btn ${inv[i] ? "btn-ghost" : "btn-wa"} btn-sm" data-inv="${i}">${inv[i] ? "Invited ✓" : "Invite"}</button></div>`).join("");
+  $$("[data-inv]").forEach(b => b.onclick = () => { const v = store.get("invited", {}); v[b.dataset.inv] = 1; store.set("invited", v); const r = ROASTERS[+b.dataset.inv];
+    waSend(`Hi ${r.n}! We're KopiKita, an app that connects small cafés in the Klang Valley with nearby suppliers. Would you like to receive café orders through KopiKita? Terima kasih!`, r.n + " (invite)"); renderRoasters(); });
+}
+
+/* ---------- ERP ---------- */
+$("#erpSeg").onclick = e => { const b = e.target.closest("[data-t]"); if (!b) return; S.erpTab = b.dataset.t; $$("#erpSeg button").forEach(x => x.classList.toggle("on", x === b)); renderERP(); };
+function invoices() { return [{ id: "INV-2207", s: "bukit", amt: 2480, due: "Fri", st: "due" }, { id: "INV-2193", s: "pakmat", amt: 336, due: "Mon", st: "due" }, { id: "INV-2188", s: "lembah", amt: 864, due: "paid", st: "paid" }, { id: "INV-2179", s: "syrupku", amt: 224, due: "overdue 3d", st: "overdue" }]; }
+function orders() { const extra = S.reqs.filter(r => r.kind === "po").map(r => ({ id: r.id, s: r.by, amt: r.amount, st: r.status === "committed" ? "sent" : r.status })); return extra.concat([{ id: "PO-1037", s: "4 suppliers", amt: 1288, st: "delivered" }, { id: "PO-1031", s: "3 suppliers", amt: 942, st: "delivered" }]); }
+function renderERP() {
+  const b = $("#erpBody"), t = S.erpTab;
+  if (t === "stock") b.innerHTML = `<div class="card" style="padding:12px 14px"><table class="tbl"><tr><th>Item</th><th class="r">On hand</th><th class="r">Use/day</th><th class="r">Days</th></tr>${P.filter(p => p.stock !== undefined).map(p => { const f = forecast(p), col = f.days < 1.5 ? "#D63B3B" : f.days < 4 ? "#FF9600" : "#58A700";
+    return `<tr><td><b style="color:var(--ink)">${p.name}</b><div style="font-size:11px;color:var(--muted)">${SUP[p.sup].name}</div></td><td class="r">${fmtQty(p.stock, p)}</td><td class="r">${f.daily < 10 ? f.daily.toFixed(1) : Math.round(f.daily)}</td><td class="r"><b style="color:${col}">${f.days.toFixed(1)}</b></td></tr>`; }).join("")}</table></div>`;
+  if (t === "orders") b.innerHTML = orders().map(o => `<div class="item"><div class="ico">🧾</div><div class="meta"><div class="t">${o.id} · ${RM(o.amt)}</div><div class="d">${esc(o.s)}</div></div><span class="pill ${o.st === "pending" ? "p-gold" : o.st === "sent" ? "p-orange" : "p-green"}">${o.st}</span></div>`).join("");
+  if (t === "inv") b.innerHTML = invoices().map(i => `<div class="item"><div class="ico">${i.st === "paid" ? "✅" : i.st === "overdue" ? "⏰" : "🧾"}</div><div class="meta"><div class="t">${i.id} · ${SUP[i.s].name}</div><div class="d">${i.st === "paid" ? "paid" : "due " + i.due}</div></div><b style="color:var(--ink)">${RM(i.amt)}</b></div>`).join("")
+    + `<p class="muted">INV-2207 is the invoice the scam message copied. It will be paid only to the bank account on file.</p>`;
+  if (t === "pl") { const rev = 68420, cogs = 16950, loss = 1240, net = rev - cogs - loss, W4 = [[15200, 3900, 420], [16800, 4100, 360], [17650, 4350, 270], [18770, 4600, 190]], mx = 19000;
+    const LS = [["Expired milk", 610], ["Syrup leakage", 240], ["Stale beans", 270], ["Damaged cups", 120]];
+    b.innerHTML = `<div class="card dark"><div style="font-size:12px;opacity:.75;font-weight:600">October so far</div><div class="kpis" style="grid-template-columns:repeat(2,1fr)">
+      <div class="kpi"><b>${RM(rev)}</b><span>revenue</span></div><div class="kpi"><b>${RM(cogs)}</b><span>supplier costs</span></div>
+      <div class="kpi"><b style="color:#ffb4a8">−${RM(loss)}</b><span>waste &amp; loss</span></div><div class="kpi"><b style="color:#A5ED6E">${RM(net)}</b><span>gross profit · ${Math.round(net / rev * 100)}%</span></div></div></div>
+      <div class="card"><div class="row"><b style="color:var(--ink)">Weekly profit &amp; loss</b><span class="spacer"></span><span class="legend" style="margin:0"><i style="background:#58CC02"></i>rev</span><span class="legend" style="margin:0 0 0 8px"><i style="background:#FF9600"></i>cost</span><span class="legend" style="margin:0 0 0 8px"><i style="background:#D63B3B"></i>loss</span></div>
+      <svg viewBox="0 0 330 150" width="100%" style="margin-top:6px">${W4.map((w, i) => { const x = 22 + i * 78; return `<rect x="${x}" y="${128 - w[0] / mx * 115}" width="14" height="${w[0] / mx * 115}" rx="7" fill="#58CC02"/><rect x="${x + 20}" y="${128 - w[1] / mx * 115}" width="14" height="${w[1] / mx * 115}" rx="7" fill="#FF9600"/><rect x="${x + 40}" y="${128 - w[2] / mx * 115 - 6}" width="12" height="${w[2] / mx * 115 + 6}" rx="6" fill="#D63B3B"/><text x="${x + 28}" y="145" font-size="11" text-anchor="middle" fill="#6b7b6b" font-family="Nunito" font-weight="700">W${i + 1}</text>`; }).join("")}</svg>
+      <div class="pill p-green" style="margin-top:4px">🫘 Waste down 55% since Biji's forecasts (W1 → W4)</div></div>
+      <div class="card"><b style="color:var(--ink)">Where the loss comes from</b>${LS.map(([n, v]) => `<div style="margin-top:10px"><div class="row" style="font-size:12.5px"><span>${n}</span><span class="spacer"></span><b style="color:#b02a2a">−${RM(v)}</b></div><div class="bar" style="margin-top:4px"><i style="width:${v / 610 * 100}%;background:#D63B3B"></i></div></div>`).join("")}</div>`; }
+}
+$("#csvBtn").onclick = () => {
+  const rows = [["type", "id", "name", "supplier", "qty_on_hand", "unit", "daily_use", "days_left", "unit_price_rm"]];
+  P.forEach(p => { const f = forecast(p); rows.push(["stock", p.id, p.name, SUP[p.sup].name, p.stock ?? "", p.u || "", f ? f.daily.toFixed(2) : "", f ? f.days.toFixed(1) : "", p.price]); });
+  orders().forEach(o => rows.push(["order", o.id, "", o.s, "", "", "", "", o.amt]));
+  invoices().forEach(i => rows.push(["invoice", i.id, i.st, SUP[i.s].name, "", "", "", "", i.amt]));
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "kopikita_erp_export.csv"; a.click(); } catch (e) {}
+  log({ kind: "erp", title: "ERP export (CSV)", d: rows.length - 1 + " rows: stock, orders, invoices" }); toast("CSV exported for your ERP");
+};
+$("#einvBtn").onclick = () => { log({ kind: "erp", title: "e-Invoice records prepared", d: "simulated: nothing submitted" }); toast("e-Invoice records prepared (simulated)"); };
+
+/* ---------- CRM ---------- */
+function renderCRM() {
+  paintWA();
+  const v = [38, 42, 40, 47, 52, 61, 58, 55, 63, 66, 71, 68], svg = $("#crmChart"); const mx = 75;
+  svg.innerHTML = v.map((x, i) => `<rect x="${i * 25 + 2}" y="${68 - x / mx * 64}" width="17" height="${x / mx * 64}" rx="5" fill="${i === v.length - 1 ? "#FF9600" : "rgba(255,255,255,.35)"}"/>`).join("");
+  const risk = churn().map(c => c.name);
+  $("#custList").innerHTML = CUSTOMERS.slice().sort((a, b) => b.visits - a.visits).map(c => `<div class="item"><div class="av" style="background:${c.c}">${c.name[0]}</div><div class="meta"><div class="t">${c.name} · ${c.drink}</div><div class="d">${c.visits} visits this month · ${RM(c.spend)} · last ${c.last === 0 ? "today" : c.last + "d ago"}</div></div>
+    ${risk.includes(c.name) ? '<span class="pill p-orange">at risk</span>' : '<span class="pill p-green">loyal</span>'}</div>`).join("");
+}
+$("#voucherBtn").onclick = () => { const c = churn(); waSend("Hi! We miss you at Kedai Kopi Anjung ☕ Your next kopi is on us this week. Show this message at the counter. Jumpa lagi!", "voucher to " + c.map(x => x.name).join(", ")); confetti(); };
+
+/* ---------- vault (E2EE) ---------- */
+let demoKey = null;
+async function getKey() { if (!demoKey) demoKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]); return demoKey; }
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))), unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+async function seal(text) {
+  if (S.mode === "live" && S.iam) { const [enc] = await S.iam.doEncrypt([{ data: text, tags: ["supplierbank"] }]); return typeof enc === "string" ? enc : b64(enc); }
+  const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await getKey(), new TextEncoder().encode(text)); return "demo." + b64(iv) + "." + b64(ct);
+}
+async function unseal(enc) {
+  if (enc.startsWith("demo.")) { const [, iv, ct] = enc.split("."); return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, await getKey(), unb64(ct))); }
+  if (S.mode === "live" && S.iam) { const [d] = await S.iam.doDecrypt([{ encrypted: enc, tags: ["supplierbank"] }]); return typeof d === "string" ? d : new TextDecoder().decode(d); }
+  throw new Error("needs a TideCloak session");
+}
+function renderNotes() {
+  $("#vaultMode").textContent = S.mode === "live" ? "Tide E2EE" : "E2EE · demo";
+  $("#vaultExplain").innerHTML = S.mode === "live" ? "Encrypted with <b>TideCloak</b> (tag <code>supplierbank</code>)." : `<span class="sim">demo</span> AES-GCM in your browser stands in for TideCloak E2EE.`;
+  $("#notes").innerHTML = S.notes.map((n, i) => `<div class="card" style="padding:12px"><div class="row"><b style="color:var(--ink)">${esc(n.title)}</b><span class="spacer"></span><span class="muted" style="font-size:11px">${time(n.ts)}</span></div>
+    <div class="cipher">${esc(n.enc.slice(0, 200))}…</div>${n.plain ? `<div class="plain">🔓 ${esc(n.plain)}</div>` : ""}
+    <button class="btn btn-line btn-sm" style="margin-top:10px" data-reveal="${i}">${n.plain ? "Hide" : "🔓 Reveal on this phone"}</button></div>`).join("");
+  $$("[data-reveal]").forEach(b => b.onclick = async () => { const n = S.notes[+b.dataset.reveal]; if (n.plain) { n.plain = null; return renderNotes(); }
+    if (!hasRole("_tide_supplierbank.selfdecrypt")) return toast("Your token can't decrypt supplier data");
+    try { n.plain = await unseal(n.enc); log({ kind: "vault", title: "Revealed · " + n.title, d: "decrypted only on this phone" }); } catch (e) { toast("🔒 " + e.message); } renderNotes(); });
+}
+$("#addNote").onclick = async () => { const t = $("#noteText").value.trim(); if (!t) return toast("Write something to seal"); S.notes.unshift({ title: "Note · " + t.split(/[:.]/)[0].slice(0, 28), enc: await seal(t), ts: Date.now() });
+  $("#noteText").value = ""; log({ kind: "vault", title: "Sealed a supplier note", d: "encrypted on the phone before storage" }); renderNotes(); toast("Sealed. The server stores only ciphertext."); };
+
+/* ---------- activity ---------- */
+const ICON = { po: ["🧾", "#fde7d6"], quorum: ["🗳️", "#fff1c2"], fraud: ["🛡️", "#fde0de"], deny: ["🔒", "#fde0de"], ai: ["🫘", "#DDF7DF"], rem: ["💬", "#DDF7DF"], erp: ["📦", "#eef2ee"], crm: ["🧑‍🤝‍🧑", "#fde7d6"], vault: ["🔐", "#fff1c2"], live: ["🔑", "#DDF7DF"] };
+function renderAudit() { $("#auditList").innerHTML = S.audit.map(a => { const [ic, bg] = ICON[a.kind] || ["•", "#eee"];
+  return `<div class="item"><div class="ico" style="background:${bg}">${ic}</div><div class="meta"><div class="t">${esc(a.title)}</div><div class="d">${esc(a.d || "")}</div></div><span class="muted" style="font-size:11px">${time(a.ts)}</span></div>`; }).join("") || '<p class="muted">No activity yet.</p>'; }
+$("#clearAudit").onclick = () => { S.audit = []; store.set("audit", []); renderAudit(); };
+
+/* ---------- sheet + settings ---------- */
+function sheet(html) { $("#sheetBody").innerHTML = html; $("#sheet").classList.add("open"); $("#sheetBg").classList.add("open"); }
+function closeSheet() { $("#sheet").classList.remove("open"); $("#sheetBg").classList.remove("open"); }
+$("#sheetBg").onclick = closeSheet;
+function openSettings() {
+  sheet(`<h2 class="serif" style="margin:0 0 4px;color:var(--ink);font-size:28px">Settings</h2><p class="muted" style="margin:0 0 12px">KopiKita · Team Wathiq (Taylor's University) · RMIT Hackathon 2026</p>
+    <div class="card" style="border-color:#A5ED6E;background:#F2FFE6"><b style="color:var(--ink)">🔐 Built with TideCloak</b>
+      <div class="tcx"><span>🔑</span><div><b>Sign-in and roles</b> from the official <code>@tidecloak/js</code> SDK</div></div>
+      <div class="tcx"><span>👥</span><div><b>2 of 3 owners</b> for big money <i>· Quorum-Enforced Governance</i></div></div>
+      <div class="tcx"><span>🔒</span><div><b>Bank details sealed</b> <i>· doEncrypt / doDecrypt</i></div></div>
+      <div class="tcx"><span>🫘</span><div><b>Biji has no roles</b>: it works inside your token and can't pay</div></div></div>
+    <div class="card"><div class="row"><b style="color:var(--ink)">Live TideCloak mode</b><span class="spacer"></span><div class="toggle ${S.mode === "live" ? "on" : ""}" id="liveToggle"></div></div>
+      <p class="muted" style="margin:6px 0 0">Loads <code>tidecloak.json</code> and uses the official TideCloak SDK for sign-in, roles, quorum-governed authority and encryption.</p></div>
+    <div class="card"><b style="color:var(--ink)">What is simulated in Demo mode</b><ul class="muted" style="margin:6px 0 0;padding-left:18px">
+      <li>Biji's chat (rule-based; forecasts and risk checks are real calculations on synthetic data, no LLM)</li><li>Café, suppliers, prices, customers and sales (synthetic)</li>
+      <li>The TideCloak token, the 2-of-3 approvals and E2EE (WebCrypto stand-in)</li><li>Sending orders, reminders, vouchers, payments and e-invoices (nothing is sent)</li><li>Delivery GPS on the map</li></ul></div>
+    <button class="btn btn-red btn-block" id="resetAll">Reset demo data</button>`);
+  $("#liveToggle").onclick = () => { closeSheet(); if (S.mode === "live") disableLive(); else enableLive(true); };
+  $("#resetAll").onclick = () => { try { Object.keys(localStorage).filter(k => k.startsWith("kk_")).forEach(k => localStorage.removeItem(k)); } catch (e) {} location.hash = ""; location.reload(); };
+}
+
+/* ---------- Live TideCloak (official SDK) ---------- */
+function applyMode() { $("#modeChip").className = "mode " + (S.mode === "live" ? "mode-live" : "mode-demo"); $("#modeChip").textContent = S.mode === "live" ? "Live" : "Demo"; renderHome(); }
+async function loadSdk() { try { return await import("./vendor/tidecloak-js-0.14.41.mjs"); } catch (e) { console.warn("local SDK failed, trying CDN", e); return await import("https://esm.sh/@tidecloak/js@0.14.41"); } }
+async function enableLive(interactive) {
+  try {
+    const res = await fetch("tidecloak.json", { cache: "no-store" }); if (!res.ok) throw new Error("tidecloak.json not found next to index.html");
+    const cfg = await res.json(), mod = await loadSdk(), IAM = mod.IAMService || (mod.default && mod.default.IAMService) || mod.default;
+    const base = location.href.replace(/[#?].*$/, "").replace(/[^/]*$/, "");
+    IAM.on("authError", (_e, err) => toast("TideCloak error: " + ((err && err.message) || err)));
+    const ok = await IAM.initIAM({ ...cfg, redirectUri: base + "auth/redirect.html", silentCheckSsoRedirectUri: base + "silent-check-sso.html" });
+    if (!ok && !IAM.isLoggedIn()) { if (interactive) { store.set("live", true); toast("Redirecting to TideCloak…"); return IAM.doLogin(); } throw new Error("not signed in"); }
+    S.iam = IAM; S.mode = "live"; store.set("live", true);
+    try { S.liveName = IAM.getValueFromIDToken("given_name") || IAM.getValueFromToken("preferred_username") || IAM.getName(); } catch (e) {}
+    log({ kind: "live", title: "Signed in with TideCloak", d: "roles and encryption keys now come from TideCloak" }); store.set("onboarded", true); applyMode(); go("home"); toast("Live: connected to TideCloak");
+  } catch (e) { console.warn(e); store.set("live", false); if (interactive) { toast("Live TideCloak unavailable (" + e.message + "). Staying in Demo mode."); if ($("#onboard").classList.contains("active")) { store.set("onboarded", true); go("home"); } } }
+}
+function disableLive() { S.mode = "demo"; S.iam = null; S.liveName = null; store.set("live", false); applyMode(); toast("Demo mode"); }
+
+/* ---------- boot ---------- */
+(async () => {
+  for (const [title, text] of [["Bank account on file · Bukit Roastery", "Bukit Roastery Sdn Bhd · current account ending 4471 · verified by phone 12 Mar 2026"], ["Price agreement · Bukit Roastery", "House Blend RM 78/kg (list RM 86) · lock option RM 76/kg for 3 months · valid to 31 Dec 2026"]])
+    S.notes.push({ title, enc: await seal(text), ts: Date.now() - 864e5 });
+  if (!S.audit.length) { log({ kind: "ai", title: "Biji checked stock", d: "milk, cups and beans will run out this week" }); log({ kind: "fraud", title: "Biji flagged a bank-change message", d: "5 red flags · moved to Approvals" }); }
+  if (store.get("live", false)) enableLive(false);
+  const start = (location.hash || "").slice(1);
+  if (start && document.getElementById(start)) go(start); else if (store.get("onboarded", false)) go("home");
+  applyMode();
+})();
+})();
+</script>
+</body>
+</html>

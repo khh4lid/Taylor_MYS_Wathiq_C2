@@ -66,6 +66,24 @@ flowchart LR
 
 **Result:** KopiKita ships as **one static `index.html` plus a `tidecloak.json`**, with no backend of our own. That is why it runs on GitHub Pages.
 
+### ✅ We deployed a real TideCloak server
+
+<p align="center">
+  <img src="docs/live/1_docker.png" width="32%" alt="TideCloak running in Docker">
+  <img src="docs/live/2_realm.png" width="32%" alt="Tide realm with Quorum Enforced Authorization">
+  <img src="docs/live/3_tide_account.png" width="32%" alt="Tide account, secured by Tide">
+</p>
+<p align="center"><sub>TideCloak (<code>tideorg/tidecloak-dev</code>) running in Docker on GitHub Codespaces · a Tide realm provisioned with Quorum Enforced Authorization (QEA) · a Tide account created in the Tide enclave</sub></p>
+
+| What we did | How |
+|---|---|
+| 🐳 Ran TideCloak | One `docker run` of `tideorg/tidecloak-dev` (see [Run it → C](#-run-it)) |
+| 🏗️ Provisioned a Tide realm | *Create a Tide realm* wizard: free-tier keys, the link-tide action, a prefilled app and **Quorum Enforced Authorization** with us as admin |
+| 👤 Created a Tide account | In the Tide enclave ("Secured by Tide"): no password stored by us or by the café |
+| 🔧 Fixed the proxy setup | Behind the Codespaces proxy the tide-console needed its web origins opened (`kcadm.sh update clients/<id> -s 'webOrigins=["*"]'`) |
+
+**Honest status:** in our time box the final browser sign-in from Codespaces did not pass Tide's signature check (most likely the Codespaces proxy). On a laptop with Docker there is no proxy in between, and Live mode (`tidecloak.json` + the official SDK) connects to a realm like this one. Until then, the GitHub Pages demo stays in clearly labelled **Demo** mode.
+
 ### Vibe coding with TideCloak: the briefing's 6 steps
 
 ```mermaid
@@ -88,7 +106,7 @@ flowchart LR
 | 5 · Test and demo | Automated Playwright runs on phone (360/390 px) and laptop (1440 px), 1:59 video |
 | 6 · Submit | Public repo with `sourcecodes.zip`, `summary.doc`, `video.mp4`, run instructions → Google Form |
 
-- **What we used:** the official `@tidecloak/js` 0.14.41 SDK (bundled in `vendor/`), the TideCloak dev server (`tideorg/tidecloak-dev`, realm `kopikita`, public client `kopikita-web`), six realm roles, Quorum-Enforced Governance with the three owners as realm admins, and Tide's MCP (Raziel) connected to our AI coding tool (Claude Code) while vibe coding.
+- **What we used:** the official `@tidecloak/js` 0.14.41 SDK (bundled in `vendor/`), the TideCloak dev server (`tideorg/tidecloak-dev` in Docker, Tide realm with QEA), a role design of six realm roles with the three owners as the 2-of-3 quorum, and Tide's MCP (Raziel) connected to our AI coding tool (Claude Code) while vibe coding.
 - **Demo vs Live:** on GitHub Pages the TideCloak parts are simulated and labelled **SIM**. *Settings → Live TideCloak mode* switches to the real SDK (setup in [Run it → C](#-run-it)).
 - **In the app:** the *Sign in with TideCloak* button, the *Built with TideCloak* card in Settings and the *Why TideCloak* card on Approvals.
 
@@ -350,12 +368,15 @@ Open http://localhost:5500 (use your browser's phone view, or open it from a pho
    ```bash
    docker run -d --name tidecloak -p 8080:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=password tideorg/tidecloak-dev:latest
    ```
-2. In the TideCloak admin console (http://localhost:8080), create a realm (e.g. `kopikita`) and a **public** client with *Valid redirect URIs* `http://localhost:5500/*` and *Web origins* `http://localhost:5500`. To use it from GitHub Pages, also add `https://khh4lid.github.io/Taylor_MYS_Wathiq_C2/*` and `https://khh4lid.github.io`.
-3. Create the realm roles `cafe-staff`, `po-approve-small`, `po-approve-large`, `supplier-bank-edit`, `_tide_supplierbank.selfencrypt` and `_tide_supplierbank.selfdecrypt`. Give the manager user every role **except** `po-approve-large` and `supplier-bank-edit`.
-4. Turn on Quorum-Enforced Governance with three realm administrators (the owners). TideCloak then needs 2 of 3 approvals for role changes.
-5. Download the client's adapter config and save it as **`tidecloak.json`** next to `index.html` (see `tidecloak.json.example`; the real file is git-ignored).
+   *On GitHub Codespaces* add `-e KC_HOSTNAME=https://${CODESPACE_NAME}-8080.app.github.dev -e KC_HTTP_ENABLED=true -e KC_PROXY_HEADERS=xforwarded` and make port 8080 public (`gh codespace ports visibility 8080:public -c $CODESPACE_NAME`).
+2. Open http://localhost:8080 and sign in as `admin` / `password` → **Create a Tide realm** (project name `kopikita`, contact email, accept the terms) → **Create & set up realm**. This provisions Tide keys, the link-tide action, a prefilled app and Quorum Enforced Authorization with you as admin.
+3. **Link your Tide account** → create a Tide account in the Tide enclave.
+4. In the tide-console: **Apps → Add an app** → name `kopikita-web`, where it lives `http://localhost:5500` → **Create app** → **Credentials → Download tidecloak.json** → save it next to `index.html` (it is git-ignored).
+5. Create the realm roles `cafe-staff`, `po-approve-small`, `po-approve-large`, `supplier-bank-edit`, `_tide_supplierbank.selfencrypt` and `_tide_supplierbank.selfdecrypt`. Give the manager every role **except** `po-approve-large` and `supplier-bank-edit`. With the three owners as admins, role changes need 2 of 3 approvals.
 6. Run step B, then tap **Sign in with TideCloak** (or *Settings → Live TideCloak mode*).
 7. To approve a large order: an admin assigns `po-approve-large` to the manager → TideCloak creates a change request → two owners approve → the manager taps **Refresh token** on the Approvals screen.
+
+If the tide-console shows *"Invalid origin"* (proxy setups such as Codespaces), open the web origins of the master-realm client `tide-console-bootstrap`.
 
 The app loads the official SDK from `vendor/tidecloak-js-0.14.41.mjs` (`@tidecloak/js` 0.14.41, bundled), with a CDN fallback.
 </details>
@@ -370,6 +391,7 @@ The app loads the official SDK from `vendor/tidecloak-js-0.14.41.mjs` (`@tideclo
 | `silent-check-sso.html`, `auth/redirect.html` | Files the TideCloak SDK needs for sign-in |
 | `tidecloak.json.example` | Shape of the TideCloak adapter config used by Live mode |
 | `docs/screenshots/`, `docs/readme/` | Screenshots of the running app and images for this page |
+| `docs/live/` | Screenshots of our TideCloak deployment in Docker |
 | `summary.doc`, `summary.docx` | Customer, problem, solution, value, criteria and the role of TideCloak |
 | `video.mp4` | Two-minute working demonstration (1:59) |
 | `sourcecodes.zip` | All of the source code in one archive |
